@@ -395,7 +395,7 @@
             });
         },
         registerMenuCommand() {
-            GM_registerMenuCommand('⚙️ 设置', () => {
+            GM_registerMenuCommand('设置', () => {
                 this.showSetting();
             });
         },

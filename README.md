@@ -7,7 +7,7 @@
 [![Edge](https://img.shields.io/badge/Edge-88+-brightgreen.svg?style=flat-square)]()
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-blue?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-GPL--3.0-lightgrey.svg?style=flat-square)](LICENSE)
-[![GreasyFork](https://img.shields.io/greasyfork/dt/533835?label=GreasyFork%20Installs&style=flat-square)](https://greasyfork.org/zh-CN/scripts/533835)
+[![GreasyFork](https://img.shields.io/greasyfork/dt/595533?label=GreasyFork%20Installs&style=flat-square)](https://greasyfork.org/zh-CN/scripts/595533)
 
 ---
 
@@ -64,7 +64,7 @@
 
 **方法二：从 GreasyFork 安装**
 
-访问 [GreasyFork 页面](https://greasyfork.org/zh-CN/scripts/533835-%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B-%E5%85%8D%E9%AA%8C%E8%AF%81%E7%A0%81) 点击 **安装**
+访问 [GreasyFork 页面](https://greasyfork.org/zh-CN/scripts/595533-%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B) 点击 **安装**
 
 ---
 
@@ -139,7 +139,7 @@
 
 | 链接 | 地址 |
 |------|------|
-| 📦 GreasyFork 安装页 | https://greasyfork.org/zh-CN/scripts/533835 |
+| 📦 GreasyFork 安装页 | https://greasyfork.org/zh-CN/scripts/595533 |
 | 🌐 官方网站 | https://www.youxiaohou.com/ |
 | 📖 使用教程 | https://www.youxiaohou.com/install.html |
 | 🐛 提交 Issue | https://github.com/Wjavan/Direct-download-link/issues |

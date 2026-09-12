@@ -140,8 +140,7 @@
 | 链接 | 地址 |
 |------|------|
 | 📦 GreasyFork 安装页 | https://greasyfork.org/zh-CN/scripts/595533 |
-| 🌐 官方网站 | https://www.youxiaohou.com/ |
-| 📖 使用教程 | https://www.youxiaohou.com/install.html |
+| 🌐 项目主页 | https://github.com/Wjavan/Direct-download-link |
 | 🐛 提交 Issue | https://github.com/Wjavan/Direct-download-link/issues |
 | 🍴 查看 Forks | https://github.com/Wjavan/Direct-download-link/forks |
 

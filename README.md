@@ -7,7 +7,7 @@
 [![Edge](https://img.shields.io/badge/Edge-88+-brightgreen.svg?style=flat-square)]()
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-blue?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-GPL--3.0-lightgrey.svg?style=flat-square)](LICENSE)
-[![GreasyFork](https://img.shields.io/greasyfork/dt/595533?label=GreasyFork%20Installs&style=flat-square)](https://greasyfork.org/zh-CN/scripts/595533)
+[![GreasyFork](https://img.shields.io/greasyfork/dt/595544?label=GreasyFork%20Installs&style=flat-square)](https://greasyfork.org/zh-CN/scripts/595544)
 
 ---
 
@@ -64,7 +64,7 @@
 
 **方法二：从 GreasyFork 安装**
 
-访问 [GreasyFork 页面](https://greasyfork.org/zh-CN/scripts/595533-%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B) 点击 **安装**
+访问 [GreasyFork 页面](https://greasyfork.org/zh-CN/scripts/595544-%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B) 点击 **安装**
 
 ---
 
@@ -85,6 +85,28 @@
 | Motrix | RPC | 支持 JSON-RPC 远程添加任务 |
 | 浏览器 | API | 直接浏览器下载 |
 | 终端 | cURL | 复制 curl 命令到终端执行 |
+
+---
+
+## 🎨 截图预览
+
+### 百度网盘
+![百度网盘](https://pic.rmb.bdstatic.com/bjh/32b2bead4b1c7fc806eacfde29b78f975055.gif)
+
+### 阿里云盘
+![阿里云盘](https://pic.rmb.bdstatic.com/bjh/5511a57ed37398ab870ab0095b78948a6031.gif)
+
+### 天翼云盘
+![天翼云盘](https://pic.rmb.bdstatic.com/bjh/e95e1fd01ceb3df999c4b088a1edb7f18839.gif)
+
+### 迅雷云盘
+![迅雷云盘](https://pic.rmb.bdstatic.com/bjh/1b7300f5a8d7f6bcea3da07fd2abf1654434.gif)
+
+### 夸克网盘
+![夸克网盘](https://pic.rmb.bdstatic.com/bjh/938883c3ddf5421d580199b60b1546733824.gif)
+
+### 移动云盘
+![移动云盘](https://pic.rmb.bdstatic.com/bjh/d493cddb5a1cdc3dbe5369304bfa2353763.gif)
 
 ---
 
@@ -117,10 +139,16 @@
 
 | 链接 | 地址 |
 |------|------|
-| 📦 GreasyFork 安装页 | https://greasyfork.org/zh-CN/scripts/595533 |
+| 📦 GreasyFork 安装页 | https://greasyfork.org/zh-CN/scripts/595544 |
 | 🌐 项目主页 | https://github.com/Wjavan/Direct-download-link |
 | 🐛 提交 Issue | https://github.com/Wjavan/Direct-download-link/issues |
 | 🍴 查看 Forks | https://github.com/Wjavan/Direct-download-link/forks |
+
+---
+
+## 🙏 致谢
+
+本脚本基于 [油小猴](https://www.youxiaohou.com/) 的「网盘直链下载助手」二次修改，在原版基础上修复了移动云盘无法获取下载地址、迅雷下载慢等问题，并将配置内嵌脚本。感谢原作者的优秀作品。
 
 ---
 

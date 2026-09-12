@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name              网盘直链下载助手
 // @namespace         https://github.com/Wjavan/Direct-download-link
-// @version           v1.0.0
-// @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持多种下载协议：HTTP/JSON-RPC/cURL。支持多种下载器：IDM/XDown/Aria2/NDM/Motrix/终端。
-// @description:en    Local edition of a pan-download helper. Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.
+// @version           1.0.0
+// @author            Wjavan
+// @description       基于油小猴(youxiaohou.com)的网盘直链下载助手修改。支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持多种下载协议：HTTP/JSON-RPC/cURL。支持多种下载器：IDM/XDown/Aria2/NDM/Motrix/终端。
+// @description:en    A fork of youxiaohou's Pan Download Helper. Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
 // @match             *://pan.baidu.com/disk/main*

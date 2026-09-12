@@ -98,7 +98,7 @@
 | RPC端口 | `16800` | Motrix 默认端口 |
 | RPC路径 | `/jsonrpc` | JSON-RPC 路径 |
 | RPC密钥 | (空) | Aria2 认证密钥 |
-| 保存路径 | `D:` | 下载文件保存目录 |
+| 保存路径 | `C:` | 下载文件保存目录 |
 | 终端类型 | Windows CMD | 可选：CMD/PowerShell/Linux/MacOS |
 | 主题颜色 | #09AAFF | 7种预设颜色可选 |
 

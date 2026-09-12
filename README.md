@@ -88,28 +88,6 @@
 
 ---
 
-## 🎨 截图预览
-
-### 百度网盘
-![百度网盘](https://pic.rmb.bdstatic.com/bjh/32b2bead4b1c7fc806eacfde29b78f975055.gif)
-
-### 阿里云盘
-![阿里云盘](https://pic.rmb.bdstatic.com/bjh/5511a57ed37398ab870ab0095b78948a6031.gif)
-
-### 天翼云盘
-![天翼云盘](https://pic.rmb.bdstatic.com/bjh/e95e1fd01ceb3df999c4b088a1edb7f18839.gif)
-
-### 迅雷云盘
-![迅雷云盘](https://pic.rmb.bdstatic.com/bjh/1b7300f5a8d7f6bcea3da07fd2abf1654434.gif)
-
-### 夸克网盘
-![夸克网盘](https://pic.rmb.bdstatic.com/bjh/938883c3ddf5421d580199b60b1546733824.gif)
-
-### 移动云盘
-![移动云盘](https://pic.rmb.bdstatic.com/bjh/d493cddb5a1cdc3dbe5369304bfa2353763.gif)
-
----
-
 ## ⚙️ 配置说明
 
 脚本内置配置项（油猴菜单 → 设置）：

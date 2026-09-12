@@ -1,13 +1,9 @@
 // ==UserScript==
 // @name              网盘直链下载助手
-// @namespace         https://github.com/Wjavan/Browser-Plugin
-// @version           1.0
-// @author            Wjavan
-// @description       基于油小猴原版修改。支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持多种下载协议：HTTP/JSON-RPC/cURL。支持多种下载器：IDM/XDown/Aria2/NDM/Motrix/终端。
-// @description:en    Based on YouXiaoHou's original: fixed Xunlei pan button, removed activation & promotions.
-// @license           AGPL-3.0-or-later
-// @supportURL        https://github.com/Wjavan/Browser-Plugin/edit/main/%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD
-// @contributor       YouXiaoHou (https://www.youxiaohou.com/install.html)
+// @namespace         https://github.com/Wjavan/Direct-download-link
+// @version           v1.0.0
+// @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持多种下载协议：HTTP/JSON-RPC/cURL。支持多种下载器：IDM/XDown/Aria2/NDM/Motrix/终端。
+// @description:en    Local edition of a pan-download helper. Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
 // @match             *://pan.baidu.com/disk/main*
@@ -36,7 +32,6 @@
 // @connect           189.cn
 // @connect           xunlei.com
 // @connect           quark.cn
-// @connect           youxiaohou.com
 // @connect           yun.139.com
 // @connect           caiyun.139.com
 // @connect           localhost
@@ -53,18 +48,12 @@
 // @grant             GM_registerMenuCommand
 // @grant             GM_cookie
 // @grant             window.close
-// @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cGF0aCBkPSJNMTAzLjYgMTA3LjRjMy41LTIuMiA4LjktNi4xIDEzLjgtMTIuNXM3LjMtMTIuNSA4LjUtMTYuNWMuNS0xLjcgMi4yLTcuNSAyLjItMTQuNyAwLTEwLjEtMy4zLTI1LjEtMTUuNC0zNi44LTE0LjUtMTQtMzIuMS0xNC4zLTM1LjctMTQuMy04IDAtMTUuNyAxLjktMjIuNiA1LjJDNDQgMjMgMzUuNyAzMS40IDMwLjggNDEuN2MtMS4zIDIuOC00IDQuNy03LjEgNS00IC4zLTcuNSA0LjQtOC45IDkuNi0uNSAxLjktMS42IDMuNS0zLjEgNC43QzQuNCA2Ni44IDAgNzUuNyAwIDg1YzAgNi44IDIuMyAxMy4xIDYuMSAxOC4yIDUuNSA3LjQgMTQuMiAxMi4yIDI0IDEyLjJoNDcuMWM0LjQgMCAxMS0uNSAxOC4zLTMuNSAzLjItMS40IDUuOS0zIDguMS00LjV6IiBmaWxsPSIjNDQ0Ii8+PHBhdGggZD0iTTExOS44IDY0LjNjLjEtMTcuMS0xMC40LTI4LTEyLjUtMzAuMUM5NSAyMi4xIDc5LjkgMjEuOCA3Ni45IDIxLjhjLTE3LjYgMC0zMy4zIDEwLjUtMzkuOSAyNi43LS42IDEuMy0xLjggMi4zLTMuNCAyLjNoLS40Yy01LjggMC0xMC42IDQuOC0xMC42IDEwLjd2LjVjMCAxLjQtLjggMi42LTEuOSAzLjNDMTMuNCA2OSA4LjggNzYuOCA4LjggODVjMCAxMi4yIDkuOSAyMi4zIDIyLjIgMjIuM2g0NS4yYzMuNi0uMSAxNy42LS45IDI5LjYtMTIgMi45LTIuOCAxMy45LTEzLjcgMTQtMzF6IiBmaWxsPSIjMTM5N2Q4Ii8+PHBhdGggZD0iTTExMC44IDU3LjRsLjIgMy4zYzAgMS4zLTEuMSAyLjQtMi4zIDIuNC0xLjMgMC0yLjMtMS4xLTIuMy0yLjRsLS4xLTIuOHYtLjNjMC0xLjIuOS0yLjIgMi4xLTIuM2guM2MuNyAwIDEuMy4zIDEuNy43LS4yLjEuMy41LjQgMS40em0tMy4zLTEwLjNjMCAxLjItMSAyLjMtMi4yIDIuM2gtLjFjLS44IDAtMS42LS41LTItMS4yLTQuNi04LjMtMTMuMy0xMy41LTIyLjgtMTMuNS0xLjIgMC0yLjMtMS0yLjMtMi4ydi0uMWMwLTEuMiAxLTIuMyAyLjItMi4zaC4xYTMwLjM3IDMwLjM3IDAgMCAxIDE1LjggNC40YzQuNiAyLjggOC40IDYuOCAxMS4xIDExLjUuMS4zLjIuNy4yIDEuMXpNODguMyA3My44TDczLjUgOTMuMmMtMS41IDEuOS0zLjUgMy4xLTUuNyAzLjVoLS4yYy0uNC4xLS44LjEtMS4yLjEtLjYgMC0xLjEtLjEtMS42LS4yLTIuMi0uNC00LjItMS43LTUuNi0zLjVMNDQuMyA3My45Yy0yLTIuNi0yLjUtNS40LTEuNC03LjcuMS0uMS4xLS4yLjItLjIgMS4yLTIgMy41LTMuMiA2LjQtMy4yaDYuNnYtNS43YzAtNi44IDQuNy0xMiAxMC45LTEyIDQuOCAwIDguNSAyLjYgMTAuMyA3LjIuNSAxLjMtLjIgMi43LTEuNSAzLjJzLTIuOC0uMS0zLjMtMS40Yy0xLjEtMi43LTIuOS00LTUuNS00LTMuNSAwLTYgMy02IDd2OC4xYzAgLjUtLjIgMS0uNiAxLjQtLjYuNy0xLjcgMS4xLTIuNiAxLjFoLTguNGMtMS4zIDAtMiAuNC0yLjEuNy0uMi40IDAgMS4zLjkgMi40TDYzLjEgOTBjLjkgMS4yIDIuMSAxLjggMy4zIDEuOHMyLjMtLjYgMy4xLTEuN2wxNC44LTE5LjNjLjktMS4xIDEuMS0yIC45LTIuNC0uMi0uMy0uOS0uNy0yLjEtLjdoLTcuNmMtLjkgMC0xLjctLjUtMi4xLTEuMi0uMy0uNC0uNC0uOC0uNC0xLjMgMC0xLjQgMS4xLTIuNSAyLjUtMi41aDcuNmMzLjEgMCA1LjUgMS4zIDYuNiAzLjVsLjMuN2MuNyAyLjEuMSA0LjYtMS43IDYuOXoiIGZpbGw9IiM0NDQiLz48L3N2Zz4=
+// @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgcng9IjIyIiBmaWxsPSIjMmI3ZmZmIi8+PHBhdGggZD0iTTY0IDMwdjQ2IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMTIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik00NCA1OGwyMCAyMCAyMC0yMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz48cmVjdCB4PSIzNCIgeT0iOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiNmZmYiLz48L3N2Zz4=
 // ==/UserScript==
-
 (function () {
     'use strict';
-
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
-    const scriptInfo = GM_info.script;
-    const version = scriptInfo.version;
-    const author = scriptInfo.author;
-    const name = scriptInfo.name;
     const manageHandler = GM_info.scriptHandler;
     const manageVersion = GM_info.version;
     const customClass = {
@@ -76,7 +65,6 @@
         input: 'pl-input',
         footer: 'pl-footer'
     };
-
     const terminalType = {
         wc: "Windows CMD",
         wp: "Windows PowerShell",
@@ -84,7 +72,6 @@
         ls: "Linux Shell",
         mt: "MacOS 终端",
     };
-
     let toast = Swal.mixin({
         toast: true,
         position: 'top',
@@ -96,7 +83,6 @@
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         }
     });
-
     const message = {
         success: (text) => {
             toast.fire({title: text, icon: 'success'});
@@ -114,9 +100,7 @@
             toast.fire({title: text, icon: 'question'});
         }
     };
-
     let base = {
-
         getCookie(name) {
             let cname = name + "=";
             let ca = document.cookie.split(';');
@@ -126,23 +110,18 @@
             }
             return "";
         },
-
         isType(obj) {
             return Object.prototype.toString.call(obj).replace(/^\[object (.+)\]$/, '$1').toLowerCase();
         },
-
         getValue(name) {
             return GM_getValue(name);
         },
-
         setValue(name, value) {
             GM_setValue(name, value);
         },
-
         deleteValue(name) {
             GM_deleteValue(name);
         },
-
         getStorage(key) {
             try {
                 return JSON.parse(localStorage.getItem(key));
@@ -150,26 +129,21 @@
                 return localStorage.getItem(key);
             }
         },
-
         setStorage(key, value) {
             if (this.isType(value) === 'object' || this.isType(value) === 'array') {
                 return localStorage.setItem(key, JSON.stringify(value));
             }
             return localStorage.setItem(key, value);
         },
-
         setClipboard(text) {
             GM_setClipboard(text, 'text');
         },
-
         e(str) {
             return btoa(unescape(encodeURIComponent(str)));
         },
-
         d(str) {
             return decodeURIComponent(escape(atob(str)));
         },
-
         getExtension(name) {
             const reg = /(?!\.)\w+$/;
             if (reg.test(name)) {
@@ -178,7 +152,6 @@
             }
             return '';
         },
-
         sizeFormat(value) {
             if (value === +value) {
                 let unit = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -189,7 +162,6 @@
             }
             return '';
         },
-
         sortByName(arr) {
             const handle = () => {
                 return (a, b) => {
@@ -200,11 +172,9 @@
             };
             arr.sort(handle());
         },
-
         fixFilename(name) {
             return name.replace(/[!?&|`"'*\/:<>\\]/g, '_');
         },
-
         blobDownload(blob, filename) {
             if (blob instanceof Blob) {
                 const url = URL.createObjectURL(blob);
@@ -215,7 +185,6 @@
                 URL.revokeObjectURL(url);
             }
         },
-
         post(url, data, headers, type) {
             if (this.isType(data) === 'object') {
                 data = JSON.stringify(data);
@@ -233,7 +202,6 @@
                 });
             });
         },
-
         get(url, headers, type, extra) {
             return new Promise((resolve, reject) => {
                 let requestObj = GM_xmlhttpRequest({
@@ -265,7 +233,6 @@
                 });
             });
         },
-
         getFinalUrl(url, headers) {
             return new Promise((resolve, reject) => {
                 let requestObj = GM_xmlhttpRequest({
@@ -279,7 +246,6 @@
                 });
             });
         },
-
         stringify(obj) {
             let str = '';
             for (var key in obj) {
@@ -294,9 +260,8 @@
                     }
                 }
             }
-            return str.slice(0, -1); // 去掉末尾的 "&"
+            return str.slice(0, -1);
         },
-
         addStyle(id, tag, css) {
             tag = tag || 'style';
             let doc = document, styleDom = doc.getElementById(id);
@@ -307,16 +272,13 @@
             tag === 'style' ? style.innerHTML = css : style.href = css;
             doc.getElementsByTagName('head')[0].appendChild(style);
         },
-
         sleep(time) {
             return new Promise(resolve => setTimeout(resolve, time));
         },
-
         getMajorVersion(version) {
             const [major] = (version || '').split('.');
             return /^\d+$/.test(major) ? major : null;
         },
-
         findReact(dom, traverseUp = 0) {
             const key = Object.keys(dom).find(key => {
                 return key.startsWith("__reactFiber$")
@@ -324,7 +286,6 @@
             });
             const domFiber = dom[key];
             if (domFiber == null) return null;
-
             if (domFiber._currentElement) {
                 let compFiber = domFiber._currentElement._owner;
                 for (let i = 0; i < traverseUp; i++) {
@@ -332,7 +293,6 @@
                 }
                 return compFiber._instance;
             }
-
             const GetCompFiber = fiber => {
                 let parentFiber = fiber.return;
                 while (typeof parentFiber.type == "string") {
@@ -346,7 +306,6 @@
             }
             return compFiber.stateNode || compFiber;
         },
-
         initDefaultConfig() {
             let value = [{
                 name: 'setting_rpc_domain',
@@ -376,12 +335,10 @@
                 name: 'license',
                 value: ''
             }];
-
             value.forEach((v) => {
                 base.getValue(v.name) === undefined && base.setValue(v.name, v.value);
             });
         },
-
         showSetting() {
             let dom = '', btn = '',
                 colorList = ['#09AAFF', '#cc3235', '#526efa', '#518c17', '#ed944b', '#f969a5', '#bca280'];
@@ -390,7 +347,6 @@
             dom += `<label class="pl-setting-label"><div class="pl-label">RPC路径</div><input type="text" placeholder="路径，默认为/jsonrpc" class="pl-input listener-path" value="${base.getValue('setting_rpc_path')}"></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">RPC密钥</div><input type="text" placeholder="无密钥无需填写" class="pl-input listener-token" value="${base.getValue('setting_rpc_token')}"></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">保存路径</div><input type="text" placeholder="文件下载后保存路径，例如：D:" class="pl-input listener-dir" value="${base.getValue('setting_rpc_dir')}"></label>`;
-
             colorList.forEach((v) => {
                 btn += `<div data-color="${v}" style="background: ${v};border: 1px solid ${v}" class="pl-color-box listener-color ${v === base.getValue('setting_theme_color') ? 'checked' : ''}"></div>`;
             });
@@ -401,7 +357,6 @@
             dom += `</select></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">主题颜色</div> <div class="pl-color">${btn}<div></label>`;
             dom = '<div>' + dom + '</div>';
-
             Swal.fire({
                 title: '助手配置',
                 html: dom,
@@ -413,7 +368,6 @@
                 message.success('设置成功！');
                 history.go(0);
             });
-
             doc.on('click', '.listener-color', async (e) => {
                 base.setValue('setting_theme_color', e.target.dataset.color);
                 message.success('设置成功！');
@@ -438,16 +392,13 @@
                 base.setValue('setting_terminal_type', e.target.value);
             });
         },
-
         registerMenuCommand() {
             GM_registerMenuCommand('⚙️ 设置', () => {
                 this.showSetting();
             });
         },
-
         createTip() {
             $('body').append('<div class="pl-tooltip"></div>');
-
             doc.on('mouseenter mouseleave', '.listener-tip', (e) => {
                 if (e.type === 'mouseenter') {
                     let filename = e.currentTarget.innerText;
@@ -464,18 +415,15 @@
                 }
             });
         },
-
         createLoading() {
             return $('<div class="pl-loading"><div class="pl-loading-box"><div><div></div><div></div></div></div></div>');
         },
-
         createDownloadIframe() {
             let $div = $('<div style="padding:0;margin:0;display:block"></div>');
             let $iframe = $('<iframe src="javascript:;" id="downloadIframe" style="display:none"></iframe>');
             $div.append($iframe);
             $('body').append($div);
         },
-
         getMirrorList(link, mirror, thread = 2) {
             let host = new URL(link).host;
             let mirrors = [];
@@ -487,11 +435,9 @@
             }
             return mirrors.join('\n');
         },
-
         listenElement(element, callback) {
             const checkInterval = 500; // 检查元素的间隔时间（毫秒）
             let wasElementFound = false; // 用于跟踪元素是否之前已经找到
-
             function checkElement() {
                 if (document.querySelector(element)) {
                     wasElementFound = true;
@@ -499,13 +445,10 @@
                 } else if (wasElementFound) {
                     wasElementFound = false; // 元素消失后重置标志
                 }
-
                 setTimeout(checkElement, checkInterval);
             }
-
             checkElement();
         },
-
         addPanLinkerStyle() {
             color = base.getValue('setting_theme_color');
             let css = `
@@ -593,17 +536,74 @@
             `;
             this.addStyle('panlinker-style', 'style', css);
         },
-
         async initDialog() {},
+    };
+    const LOCAL_CONFIG = {
+        baidu: {
+            pcs: {"0": "https://pan.baidu.com/rest/2.0/xpan/multimedia?method=filemetas&dlink=1", "1": "https://pan.baidu.com/api/sharedownload?channel=chunlei&clienttype=12&web=1&app_id=250528", "2": "https://pan.baidu.com/share/tplconfig?fields=sign,timestamp&channel=chunlei&web=1&app_id=250528&clienttype=0", "3": "https://openapi.baidu.com/oauth/2.0/authorize?client_id=IlLqBbU3GjQ0t46TRwFateTprHWl39zF&response_type=token&redirect_uri=oob&confirm_login=0&scope=basic,netdisk", "4": "https://openapi.baidu.com/oauth/2.0/login_success"},
+            btn: {"home": ".tcuLAu", "main": ".wp-s-agile-tool-bar__header", "share": ".module-share-top-bar .x-button-box404"},
+            ua: "pan.baidu.com",
+            api: {0: "API 下载", 1: ''},
+            aria: {0: "Aria 下载", 1: ''},
+            rpc: {0: "RPC 下载", 1: ''},
+            curl: {0: "cURL 下载", 1: ''},
+            bc: {0: "BC 下载", 1: ''},
+        },
+        ali: {
+            pcs: {"0": "https://api.aliyundrive.com/v2/file/get_share_link_download_url", "1": "https://api.aliyundrive.com/v2/file/get_download_url"},
+            btn: {"home": ".actions--M9Np-", "share": ".right--x0Z1g"},
+            dom: {"list": "[class^=\"node-list-table-view--\"]", "grid": "[class^=\"node-list-grid-view--\"]", "switch": "[class^=\"switch-wrapper--\"]"},
+            api: {0: "API 下载", 1: ''},
+            aria: {0: "Aria 下载", 1: ''},
+            rpc: {0: "RPC 下载", 1: ''},
+            curl: {0: "cURL 下载", 1: ''},
+            bc: {0: "BC 下载", 1: ''},
+        },
+        tianyi: {
+            pcs: {"0": "https://cloud.189.cn/api/open/file/getFileDownloadUrl.action", "1": "https://api.cloud.189.cn/open/oauth2/ssoH5.action", "2": "https://api.cloud.189.cn/open/file/getFileDownloadUrl.action"},
+            btn: {"home": ".nav-opea", "share": ".nav-opea"},
+            api: {0: "API 下载", 1: ''},
+            aria: {0: "Aria 下载", 1: ''},
+            rpc: {0: "RPC 下载", 1: ''},
+            curl: {0: "cURL 下载", 1: ''},
+            bc: {0: "BC 下载", 1: ''},
+        },
+        xunlei: {
+            pcs: {"0": "https://api-pan.xunlei.com/drive/v1/files/"},
+            btn: {"home": ".FileMenu__menu--XBFEH", "share": ".Share__batchActionBox--VKPyR"},
+            mirror: ["vod0007-h05-vip-lixian.xunlei.com", "vod0008-h05-vip-lixian.xunlei.com", "vod0009-h05-vip-lixian.xunlei.com", "vod0010-h05-vip-lixian.xunlei.com", "vod0011-h05-vip-lixian.xunlei.com", "vod0012-h05-vip-lixian.xunlei.com", "vod0013-h05-vip-lixian.xunlei.com", "vod0014-h05-vip-lixian.xunlei.com", "vod0067-aliyun08-vip-lixian.xunlei.com", "vod0254-aliyun08-vip-lixian.xunlei.com", "vod0255-aliyun08-vip-lixian.xunlei.com", "vod0256-aliyun08-vip-lixian.xunlei.com", "vod0257-aliyun08-vip-lixian.xunlei.com", "vod0258-aliyun08-vip-lixian.xunlei.com", "vod0259-aliyun08-vip-lixian.xunlei.com", "vod0260-aliyun08-vip-lixian.xunlei.com", "vod0261-aliyun08-vip-lixian.xunlei.com", "vod0262-aliyun08-vip-lixian.xunlei.com", "vod0263-aliyun08-vip-lixian.xunlei.com", "vod0264-aliyun08-vip-lixian.xunlei.com", "vod0265-aliyun08-vip-lixian.xunlei.com", "vod0266-aliyun08-vip-lixian.xunlei.com", "vod0267-aliyun08-vip-lixian.xunlei.com", "vod0554-aliyun06-vip-lixian.xunlei.com", "vod0555-aliyun06-vip-lixian.xunlei.com", "vod0556-aliyun06-vip-lixian.xunlei.com", "vod0680-aliyun08-vip-lixian.xunlei.com", "vod0681-aliyun08-vip-lixian.xunlei.com", "vod0682-aliyun08-vip-lixian.xunlei.com", "vod0683-aliyun08-vip-lixian.xunlei.com", "vod0684-aliyun08-vip-lixian.xunlei.com", "vod0685-aliyun08-vip-lixian.xunlei.com", "vod0686-aliyun08-vip-lixian.xunlei.com", "vod0687-aliyun08-vip-lixian.xunlei.com", "vod0688-aliyun08-vip-lixian.xunlei.com", "vod0689-aliyun08-vip-lixian.xunlei.com", "vod0690-aliyun08-vip-lixian.xunlei.com", "vod0724-aliyun08-vip-lixian.xunlei.com", "vod0725-aliyun08-vip-lixian.xunlei.com", "vod0726-aliyun08-vip-lixian.xunlei.com", "vod0727-aliyun08-vip-lixian.xunlei.com", "vod0728-aliyun08-vip-lixian.xunlei.com", "vod0075.aliyun06.vip.lixian.xunlei.com", "vod0076.aliyun06.vip.lixian.xunlei.com", "vod0077.aliyun06.vip.lixian.xunlei.com", "vod0779-aliyun04-vip-lixian.xunlei.com", "vod0078.aliyun06.vip.lixian.xunlei.com", "vod0780-aliyun04-vip-lixian.xunlei.com", "vod0781-aliyun04-vip-lixian.xunlei.com", "vod0079.aliyun06.vip.lixian.xunlei.com", "vod0080.aliyun06.vip.lixian.xunlei.com", "vod0117.aliyun04.vip.lixian.xunlei.com", "vod0118.aliyun04.vip.lixian.xunlei.com", "vod0119.aliyun04.vip.lixian.xunlei.com", "vod1284-aliyun06-vip-lixian.xunlei.com", "vod1285-aliyun06-vip-lixian.xunlei.com", "vod1363-aliyun06-vip-lixian.xunlei.com", "vod1371-aliyun06-vip-lixian.xunlei.com", "vod1372-aliyun06-vip-lixian.xunlei.com", "vod1426-aliyun06-vip-lixian.xunlei.com", "vod1427-aliyun06-vip-lixian.xunlei.com", "vod1428-aliyun06-vip-lixian.xunlei.com", "vod1429-aliyun06-vip-lixian.xunlei.com", "vod1442-aliyun06-vip-lixian.xunlei.com", "vod1443-aliyun06-vip-lixian.xunlei.com", "vod1444-aliyun06-vip-lixian.xunlei.com", "vod1445-aliyun06-vip-lixian.xunlei.com", "vod1446-aliyun06-vip-lixian.xunlei.com", "vod1447-aliyun06-vip-lixian.xunlei.com", "vod1469-aliyun06-vip-lixian.xunlei.com", "vod1470-aliyun06-vip-lixian.xunlei.com", "vod1471-aliyun06-vip-lixian.xunlei.com", "vod1489-aliyun06-vip-lixian.xunlei.com", "vod1490-aliyun06-vip-lixian.xunlei.com", "vod1491-aliyun06-vip-lixian.xunlei.com", "vod1492-aliyun06-vip-lixian.xunlei.com", "vod1493-aliyun06-vip-lixian.xunlei.com", "vod0215.aliyun06.vip.lixian.xunlei.com", "vod0216.aliyun06.vip.lixian.xunlei.com", "vod0217.aliyun06.vip.lixian.xunlei.com", "vod0218.aliyun06.vip.lixian.xunlei.com", "vod0219.aliyun06.vip.lixian.xunlei.com", "vod0220.aliyun06.vip.lixian.xunlei.com", "vod0241.aliyun08.vip.lixian.xunlei.com", "vod0244.aliyun08.vip.lixian.xunlei.com", "vod0251.aliyun08.vip.lixian.xunlei.com", "vod0252.aliyun08.vip.lixian.xunlei.com", "vod0253.aliyun08.vip.lixian.xunlei.com", "vod0254.aliyun08.vip.lixian.xunlei.com", "vod0255.aliyun08.vip.lixian.xunlei.com", "vod0256.aliyun08.vip.lixian.xunlei.com", "vod0257.aliyun08.vip.lixian.xunlei.com", "vod0260.aliyun08.vip.lixian.xunlei.com", "vod0261.aliyun08.vip.lixian.xunlei.com", "vod0262.aliyun08.vip.lixian.xunlei.com", "vod0263.aliyun08.vip.lixian.xunlei.com", "vod0264.aliyun08.vip.lixian.xunlei.com", "vod0265.aliyun08.vip.lixian.xunlei.com", "vod0266.aliyun08.vip.lixian.xunlei.com", "vod0267.aliyun08.vip.lixian.xunlei.com", "vod3379-aliyun04-vip-lixian.xunlei.com", "vod3380-aliyun04-vip-lixian.xunlei.com", "vod3429-aliyun04-vip-lixian.xunlei.com", "vod3458-aliyun04-vip-lixian.xunlei.com", "vod3459-aliyun04-vip-lixian.xunlei.com", "vod3496-aliyun04-vip-lixian.xunlei.com", "vod3497-aliyun04-vip-lixian.xunlei.com", "vod3498-aliyun04-vip-lixian.xunlei.com", "vod3499-aliyun04-vip-lixian.xunlei.com", "vod3500-aliyun04-vip-lixian.xunlei.com", "vod3501-aliyun04-vip-lixian.xunlei.com", "vod3522-aliyun04-vip-lixian.xunlei.com", "vod3523-aliyun04-vip-lixian.xunlei.com", "vod3533-aliyun04-vip-lixian.xunlei.com", "vod3534-aliyun04-vip-lixian.xunlei.com", "vod3535-aliyun04-vip-lixian.xunlei.com", "vod3536-aliyun04-vip-lixian.xunlei.com", "vod3549-aliyun04-vip-lixian.xunlei.com", "vod3550-aliyun04-vip-lixian.xunlei.com", "vod3551-aliyun04-vip-lixian.xunlei.com", "vod3552-aliyun04-vip-lixian.xunlei.com", "vod3553-aliyun04-vip-lixian.xunlei.com", "vod3554-aliyun04-vip-lixian.xunlei.com", "vod3555-aliyun04-vip-lixian.xunlei.com", "vod0551.aliyun06.vip.lixian.xunlei.com", "vod0552.aliyun06.vip.lixian.xunlei.com", "vod0553.aliyun06.vip.lixian.xunlei.com", "vod0554.aliyun06.vip.lixian.xunlei.com", "vod0555.aliyun06.vip.lixian.xunlei.com", "vod0556.aliyun06.vip.lixian.xunlei.com", "vod0686.aliyun08.vip.lixian.xunlei.com", "vod0687.aliyun08.vip.lixian.xunlei.com", "vod0688.aliyun08.vip.lixian.xunlei.com", "vod0689.aliyun08.vip.lixian.xunlei.com", "vod0724.aliyun08.vip.lixian.xunlei.com", "vod0725.aliyun08.vip.lixian.xunlei.com", "vod0726.aliyun08.vip.lixian.xunlei.com", "vod0727.aliyun08.vip.lixian.xunlei.com", "vod0728.aliyun08.vip.lixian.xunlei.com", "vod0759.aliyun04.vip.lixian.xunlei.com", "vod0760.aliyun04.vip.lixian.xunlei.com", "vod0769.aliyun04.vip.lixian.xunlei.com", "vod0770.aliyun04.vip.lixian.xunlei.com", "vod0771.aliyun04.vip.lixian.xunlei.com", "vod0772.aliyun04.vip.lixian.xunlei.com", "vod0773.aliyun04.vip.lixian.xunlei.com", "vod0774.aliyun04.vip.lixian.xunlei.com", "vod0775.aliyun04.vip.lixian.xunlei.com", "vod0776.aliyun04.vip.lixian.xunlei.com", "vod0777.aliyun04.vip.lixian.xunlei.com", "vod0778.aliyun04.vip.lixian.xunlei.com", "vod0779.aliyun04.vip.lixian.xunlei.com", "vod0780.aliyun04.vip.lixian.xunlei.com", "vod0781.aliyun04.vip.lixian.xunlei.com", "vod3522.aliyun04.vip.lixian.xunlei.com", "vod3523.aliyun04.vip.lixian.xunlei.com", "vod3533.aliyun04.vip.lixian.xunlei.com", "vod3535.aliyun04.vip.lixian.xunlei.com", "vod3550.aliyun04.vip.lixian.xunlei.com", "vod3551.aliyun04.vip.lixian.xunlei.com", "vod3552.aliyun04.vip.lixian.xunlei.com", "vod3553.aliyun04.vip.lixian.xunlei.com", "vod3554.aliyun04.vip.lixian.xunlei.com", "vod3555.aliyun04.vip.lixian.xunlei.com"],
+            api: {0: "API 下载", 1: ''},
+            aria: {0: "Aria 下载", 1: ''},
+            rpc: {0: "RPC 下载", 1: ''},
+            curl: {0: "cURL 下载", 1: ''},
+            bc: {0: "BC 下载", 1: ''},
+        },
+        quark: {
+            pcs: {"0": "https://drive.quark.cn/1/clouddrive/file/download?pr=ucpro&fr=pc"},
+            btn: {"home": ".btn-operate .btn-main", "share": ".file-info-share-buttom"},
+            ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch",
+            api: {0: "API 下载", 1: ''},
+            aria: {0: "Aria 下载", 1: ''},
+            rpc: {0: "RPC 下载", 1: ''},
+            curl: {0: "cURL 下载", 1: ''},
+            bc: {0: "BC 下载", 1: ''},
+        },
+        yidong: {
+            pcs: {"0": "https://personal-kd-njs.yun.139.com/hcy/file/getDownloadUrl", "1": "https://caiyun.139.com/stapi/outlink/content/download"},
+            btn: {"home": ".top_button", "share": ".top-btns"},
+            api: {0: "API 下载", 1: ''},
+            aria: {0: "Aria 下载", 1: ''},
+            rpc: {0: "RPC 下载", 1: ''},
+            curl: {0: "cURL 下载", 1: ''},
+            bc: {0: "BC 下载", 1: ''},
+        },
     };
 
     let baidu = {
-
         _getExtra() {
             let seKey = decodeURIComponent(base.getCookie('BDCLND'));
             return '{' + '"sekey":"' + seKey + '"' + "}";
         },
-
         _getSurl() {
             let reg = /(?<=s\/|surl=)([a-zA-Z0-9_-]+)/g;
             if (reg.test(location.href)) {
@@ -611,7 +611,6 @@
             }
             return '';
         },
-
         _getFidList() {
             let fidlist = [];
             selectList.forEach(v => {
@@ -620,7 +619,6 @@
             });
             return '[' + fidlist + ']';
         },
-
         _resetData() {
             progress = {};
             $.each(request, (key) => {
@@ -633,7 +631,6 @@
             ins = {};
             request = {};
         },
-
         setBDUSS() {
             try {
                 GM_cookie && GM_cookie('list', {name: 'BDUSS'}, (cookies, error) => {
@@ -647,12 +644,10 @@
             } catch (e) {
             }
         },
-
         getBDUSS() {
             let baiduyunPlugin_BDUSS = base.getStorage('baiduyunPlugin_BDUSS') ? base.getStorage('baiduyunPlugin_BDUSS') : '{"baiduyunPlugin_BDUSS":""}';
             return baiduyunPlugin_BDUSS.BDUSS || '';
         },
-
         convertLinkToAria(link, filename, ua) {
             let BDUSS = this.getBDUSS();
             if (!!BDUSS) {
@@ -664,7 +659,6 @@
                 text: '未获取到BDUSS Cookie，请确保已登录百度网盘'
             };
         },
-
         convertLinkToBC(link, filename, ua) {
             let BDUSS = this.getBDUSS();
             if (!!BDUSS) {
@@ -677,7 +671,6 @@
                 text: '未获取到BDUSS Cookie，请确保已登录百度网盘'
             };
         },
-
         convertLinkToCurl(link, filename, ua) {
             let BDUSS = this.getBDUSS();
             if (!!BDUSS) {
@@ -690,7 +683,6 @@
                 text: '未获取到BDUSS Cookie，请确保已登录百度网盘'
             };
         },
-
         addPageListener() {
             function _factory(e) {
                 let target = $(e.target);
@@ -702,14 +694,12 @@
                     item, link, progress, tip, target,
                 };
             }
-
             function _reset(i) {
                 ins[i] && clearInterval(ins[i]);
                 request[i] && request[i].abort();
                 progress[i] = 0;
                 idm[i] = false;
             }
-
             doc.on('mouseenter mouseleave click', '.pl-button.g-dropdown-button', (e) => {
                 if (e.type === 'mouseleave') {
                     $(e.currentTarget).removeClass('button-open');
@@ -721,7 +711,6 @@
             doc.on('mouseleave', '.pl-button.g-dropdown-button .pl-dropdown-menu', (e) => {
                 $(e.currentTarget).hide();
             });
-
             doc.on('click', '.pl-button-mode', (e) => {
                 mode = e.target.dataset.mode;
                 Swal.showLoading();
@@ -774,7 +763,6 @@
                     o.progress.hide();
                     o.tip.show();
                 }
-
             });
             doc.on('click', '.listener-stop', async (e) => {
                 let o = _factory(e);
@@ -828,7 +816,6 @@
                 }
             }, true);
         },
-
         addButton() {
             if (!pt) return;
             let $toolWrap;
@@ -843,7 +830,6 @@
             this.setBDUSS();
             this.addPageListener();
         },
-
         addInitButton() {
             if (!pt) return;
             let $toolWrap;
@@ -857,13 +843,11 @@
             $toolWrap.prepend($button);
             $button.click(() => {});
         },
-
         async getToken() {
             const openTab = () => {
                 GM_openInTab(pan.pcs[3], {active: false, insert: true, setParent: true});
                 base.deleteValue('baidu_access_token');
             };
-
             const waitForToken = () => new Promise((resolve) => {
                 let attempts = 0;
                 const interval = setInterval(() => {
@@ -879,13 +863,11 @@
                     }
                 }, 1000);
             });
-
             if (manageHandler === 'Tampermonkey' && base.getMajorVersion(manageVersion) >= 5) {
                 openTab();
                 return waitForToken();
             }
             let res = await base.getFinalUrl(pan.pcs[3]);
-
             if (!res.includes('authorize') && !res.includes('access_token=')) {
                 openTab();
                 return waitForToken();
@@ -914,11 +896,9 @@
             accessToken && base.setValue('baidu_access_token', accessToken);
             return accessToken;
         },
-
         async getPCSLink(maxRequestTime = 1) {
             selectList = this.getSelectedList();
             let fidList = this._getFidList(), url, res;
-
             if (pt === 'home' || pt === 'main') {
                 if (selectList.length === 0) {
                     return message.error('提示：请先勾选要下载的文件！');
@@ -973,7 +953,6 @@
                 message.error('提示：获取下载链接失败！请刷新网页后重试！');
             }
         },
-
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
@@ -988,7 +967,7 @@
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${dlink}" data-filename="${filename}" data-link="${dlink}" data-index="${i}">${dlink}</a>
-                                <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，找到IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span>，<a href="${pan.idm}" target="_blank" class="pl-a">详见此处</a></span> <span class="pl-back listener-back">返回</span></div>
+                                <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div>
                                 <div class="pl-item-progress" style="display: none">
                                     <div class="pl-progress">
                                         <div class="pl-progress-outer"></div>
@@ -1043,7 +1022,6 @@
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a" href="${decodeURIComponent(alink)}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${alink}">${decodeURIComponent(alink)}</a> </div>`;
                     }
-
                 }
             });
             content += '</div>';
@@ -1057,7 +1035,6 @@
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;">设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')]}）</button></div>`;
             return content;
         },
-
         async sendLinkToRPC(filename, link) {
             let rpc = {
                 domain: base.getValue('setting_rpc_domain'),
@@ -1068,7 +1045,6 @@
             };
             let BDUSS = this.getBDUSS();
             if (!BDUSS) return 'assistant';
-
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
             let rpcData = {
                 id: new Date().getTime(),
@@ -1088,7 +1064,6 @@
                 return 'fail';
             }
         },
-
         getSelectedList() {
             try {
                 return require('system-core:context/context.js').instanceForSystem.list.getSelected();
@@ -1096,12 +1071,10 @@
                 return document.querySelector('.wp-s-core-pan').__vue__.selectedList;
             }
         },
-
         getLogid() {
             let ut = require("system-core:context/context.js").instanceForSystem.tools.baseService;
             return ut.base64Encode(base.getCookie("BAIDUID"));
         },
-
         getShareData() {
             let res = locals.dump();
             params.shareType = 'secret';
@@ -1120,7 +1093,6 @@
             params.shareType === 'secret' && (params.extra = this._getExtra());
             params.surl = this._getSurl();
         },
-
         detectPage() {
             let path = location.pathname;
             if (/^\/disk\/home/.test(path)) return 'home';
@@ -1129,7 +1101,6 @@
             return '';
             return '';
         },
-
         showMainDialog(title, html, footer) {
             Swal.fire({
                 title,
@@ -1146,20 +1117,16 @@
                 this._resetData();
             });
         },
-
         async initPanLinker() {
             base.initDefaultConfig();
             base.addPanLinkerStyle();
             pt = this.detectPage();
-            let res = await base.post
-            (`https://api.youxiaohou.com/config/v2?ver=${version}&a=${author}`, {}, {}, 'text');
-            pan = JSON.parse(base.d(res));
+            pan = LOCAL_CONFIG.baidu;
             Object.freeze && Object.freeze(pan);
             this.addButton();
             base.createTip();
             base.registerMenuCommand();
         },
-
         async initAuthorize() {
             let ins = setInterval(() => {
                 if (/openapi.baidu.com\/oauth\/2.0\/authorize/.test(location.href)) {
@@ -1179,43 +1146,68 @@
             }, 200)
         }
     };
-
     let ali = {
-
         convertLinkToAria(link, filename, ua) {
             filename = base.fixFilename(filename);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}" --header "Referer: https://www.aliyundrive.com/"`);
         },
-
         convertLinkToBC(link, filename, ua) {
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&refer=${encodeURIComponent('https://www.aliyundrive.com/')}ZZ`;
             return encodeURIComponent(`bc://http/${base.e(bc)}`);
         },
-
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/"`);
         },
-
         addPageListener() {
             doc.on('click', '.pl-button-mode', (e) => {
                 mode = e.target.dataset.mode;
                 Swal.showLoading();
                 this.getPCSLink();
             });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api.browser', async (e) => {
                 e.preventDefault();
                 let dataset = e.currentTarget.dataset;
                 let href = dataset.link;
-                // let url = await this.getRealLink(dataset.did, dataset.fid);
-                // if (url) href = url;
                 $('#downloadIframe').attr('src', href);
-                // let d = document.createElement("a");
-                // d.download = e.currentTarget.dataset.filename;
-                // d.rel = "noopener";
-                // d.href = href;
-                // d.dispatchEvent(new MouseEvent("click"));
+            });
+            doc.on('click', '.listener-link-api.blob', async (e) => {
+                e.preventDefault();
+                let dataset = e.currentTarget.dataset;
+                let href = dataset.link;
+                let filename = dataset.filename;
+                let index = dataset.index;
+                if (dataset.did && dataset.fid) {
+                    let url = await this.getRealLink(dataset.did, dataset.fid);
+                    if (url && typeof url === 'string' && /^https?:/.test(url)) href = url;
+                }
+                if (!href) {
+                    return message.error('提示：未获取到下载链接，请刷新页面后重试！');
+                }
+                let $item = $(e.currentTarget).closest('.pl-item');
+                $item.find('.listener-link-api').hide();
+                let $progress = $item.find('.pl-item-progress');
+                let $width = $progress.find('.pl-progress-inner');
+                let $text = $progress.find('.pl-progress-inner-text');
+                let $tip = $progress.find('.pl-progress-tip');
+                $progress.show();
+                $tip.text('正在通过文件流下载…');
+                clearInterval(ins[index]);
+                base.get(href, {"Referer": `https://${location.host}/`}, 'blob', {filename, index});
+                ins[index] = setInterval(() => {
+                    let prog = +progress[index] || 0;
+                    $width.css('width', prog + '%');
+                    $text.text(prog + '%');
+                    if (prog >= 100) {
+                        clearInterval(ins[index]);
+                        $tip.text('下载完成，已弹出保存框！');
+                        setTimeout(() => {
+                            $progress.hide();
+                            $item.find('.listener-link-api').show();
+                        }, 2500);
+                    }
+                }, 500);
             });
             doc.on('click', '.listener-link-api-btn', async (e) => {
                 base.setClipboard(e.target.dataset.filename);
@@ -1246,7 +1238,6 @@
                 base.showSetting();
             });
         },
-
         async getRealLink(d, f) {
             let authorization = `${base.getStorage('token').token_type} ${base.getStorage('token').access_token}`;
             let res = await base.post(pan.pcs[1], {
@@ -1266,7 +1257,6 @@
             }
             return '';
         },
-
         addButton() {
             if (!pt) return;
             let $toolWrap;
@@ -1287,7 +1277,6 @@
             base.createDownloadIframe();
             this.addPageListener();
         },
-
         addInitButton() {
             if (!pt) return;
             let $toolWrap;
@@ -1307,7 +1296,6 @@
             }
             $button.click(() => {});
         },
-
         async getPCSLink() {
             let reactDomGrid = document.querySelector(pan.dom.grid);
             if (reactDomGrid) {
@@ -1336,7 +1324,6 @@
                 try {
                     let authorization = `${base.getStorage('token').token_type} ${base.getStorage('token').access_token}`;
                     let xShareToken = base.getStorage('shareToken').share_token;
-
                     for (let i = 0; i < selectList.length; i++) {
                         let res = await base.post(pan.pcs[0], {
                             expire_sec: 600,
@@ -1363,17 +1350,14 @@
                 noUrlSelectList.forEach((item, index) => {
                     queue.push(this.getRealLink(item.driveId, item.fileId));
                 });
-
                 const res = await Promise.all(queue);
                 res.forEach((val, index) => {
                     noUrlSelectList[index].url = val;
                 });
-
             }
             let html = this.generateDom(selectList);
             this.showMainDialog(pan[mode][0], html, pan[mode][1]);
         },
-
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
@@ -1387,8 +1371,18 @@
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-api" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${dlink}" data-index="${i}">${dlink}</a>
+                                <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${dlink}" data-index="${i}">直接下载</button>
+                                <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${dlink}" data-index="${i}">增强下载(文件流)</button>
                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
+                                <div class="pl-item-progress" style="display: none">
+                                    <div class="pl-progress">
+                                        <div class="pl-progress-outer"></div>
+                                        <div class="pl-progress-inner" style="width:5%">
+                                          <div class="pl-progress-inner-text">0%</div>
+                                        </div>
+                                    </div>
+                                    <span class="pl-progress-tip">正在下载…</span>
+                                </div>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -1428,7 +1422,6 @@
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;">设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')]}）</button></div>`;
             return content;
         },
-
         async sendLinkToRPC(filename, link) {
             let rpc = {
                 domain: base.getValue('setting_rpc_domain'),
@@ -1437,7 +1430,6 @@
                 token: base.getValue('setting_rpc_token'),
                 dir: base.getValue('setting_rpc_dir'),
             };
-
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
             let rpcData = {
                 id: new Date().getTime(),
@@ -1457,7 +1449,6 @@
                 return 'fail';
             }
         },
-
         getSelectedList() {
             try {
                 let selectedList = [];
@@ -1478,21 +1469,18 @@
                 return [];
             }
         },
-
         detectPage() {
             let path = location.pathname;
             if (/^\/(drive)/.test(path)) return 'home';
             if (/^\/(s|share)\//.test(path)) return 'share';
             return '';
         },
-
         isOnlyFolder() {
             for (let i = 0; i < selectList.length; i++) {
                 if (selectList[i].type === 'file') return false;
             }
             return true;
         },
-
         showMainDialog(title, html, footer) {
             Swal.fire({
                 title,
@@ -1507,39 +1495,31 @@
                 customClass,
             });
         },
-
         async initPanLinker() {
             base.initDefaultConfig();
             base.addPanLinkerStyle();
             pt = this.detectPage();
-            let res = await base.post
-            (`https://api.youxiaohou.com/config/v2/ali?ver=${version}&a=${author}`, {}, {}, 'text');
-            pan = JSON.parse(base.d(res));
+            pan = LOCAL_CONFIG.ali;
             Object.freeze && Object.freeze(pan);
             this.addButton();
             base.createTip();
             base.registerMenuCommand();
         }
     };
-
     let tianyi = {
-
         convertLinkToAria(link, filename, ua) {
             filename = base.fixFilename(filename);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}"`);
         },
-
         convertLinkToBC(link, filename, ua) {
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}ZZ`;
             return encodeURIComponent(`bc://http/${base.e(bc)}`);
         },
-
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}"`);
         },
-
         addPageListener() {
             doc.on('click', '.pl-button-mode', (e) => {
                 mode = e.target.dataset.mode;
@@ -1575,15 +1555,33 @@
                 base.showSetting();
             });
         },
-
+        _insertBeforeUpload(container, $button) {
+            let uploadBtn = null;
+            let candidates = container.querySelectorAll('a, button, div, span, em, i');
+            for (let el of candidates) {
+                let text = (el.innerText || el.textContent || '').trim();
+                if (text === '上传' || text === '上传文件' || text === '上传文件夹') {
+                    uploadBtn = el;
+                    break;
+                }
+            }
+            if (uploadBtn) {
+                let clickable = uploadBtn.closest && (uploadBtn.closest('button, a, [class*="btn"], [class*="button"]') || uploadBtn);
+                container.insertBefore($button[0], clickable);
+            } else {
+                container.insertBefore($button[0], container.firstChild);
+            }
+        },
         addButton() {
             if (!pt) return;
             let $toolWrap;
             let $button = $(`<div class="tianyi-button pl-button">下载助手<ul class="pl-dropdown-menu" style="top: 26px;"><li class="pl-dropdown-menu-item pl-button-mode" data-mode="api">API下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="aria" >Aria下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="rpc">RPC下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="curl">cURL下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="bc" >BC下载</li><li class="pl-dropdown-menu-item pl-button-mode listener-open-setting">助手设置</li></ul></div>`);
             if (pt === 'home') {
                 base.listenElement(pan.btn.home, () => {
-                    $toolWrap = $(pan.btn.home);
-                    $('.pl-button').length === 0 && $toolWrap.prepend($button);
+                    let container = document.querySelector(pan.btn.home);
+                    if (container && $('.pl-button').length === 0) {
+                        this._insertBeforeUpload(container, $button);
+                    }
                 })
             }
             if (pt === 'share') {
@@ -1595,15 +1593,16 @@
             base.createDownloadIframe();
             this.addPageListener();
         },
-
         addInitButton() {
             if (!pt) return;
             let $toolWrap;
             let $button = $(`<div class="tianyi-button pl-button-init">下载助手</div>`);
             if (pt === 'home') {
                 base.listenElement(pan.btn.home, () => {
-                    $toolWrap = $(pan.btn.home);
-                    $('.pl-button-init').length === 0 && $toolWrap.prepend($button);
+                    let container = document.querySelector(pan.btn.home);
+                    if (container && $('.pl-button-init').length === 0) {
+                        this._insertBeforeUpload(container, $button);
+                    }
                 })
             }
             if (pt === 'share') {
@@ -1615,14 +1614,12 @@
             }
             $button.click(() => {});
         },
-
         async getToken() {
             let res = await base.getFinalUrl(pan.pcs[1], {});
             let accessToken = res.match(/accessToken=(\w+)/)?.[1];
             accessToken && base.setStorage('accessToken', accessToken);
             return accessToken;
         },
-
         async getFileUrlByOnce(item, index, token) {
             try {
                 if (item.downloadUrl) return {
@@ -1673,7 +1670,6 @@
                 };
             }
         },
-
         async getPCSLink() {
             selectList = this.getSelectedList();
             if (selectList.length === 0) {
@@ -1690,16 +1686,13 @@
             selectList.forEach((item, index) => {
                 queue.push(this.getFileUrlByOnce(item, index, token));
             });
-
             const res = await Promise.all(queue);
             res.forEach(val => {
                 selectList[val.index].downloadUrl = val.downloadUrl;
             });
-
             let html = this.generateDom(selectList);
             this.showMainDialog(pan[mode][0], html, pan[mode][1]);
         },
-
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
@@ -1751,7 +1744,6 @@
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;">设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')]}）</button></div>`;
             return content;
         },
-
         async sendLinkToRPC(filename, link) {
             let rpc = {
                 domain: base.getValue('setting_rpc_domain'),
@@ -1760,7 +1752,6 @@
                 token: base.getValue('setting_rpc_token'),
                 dir: base.getValue('setting_rpc_dir'),
             };
-
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
             let rpcData = {
                 id: new Date().getTime(),
@@ -1780,7 +1771,6 @@
                 return 'fail';
             }
         },
-
         getSelectedList() {
             try {
                 return document.querySelector(".c-file-list").__vue__.selectedList;
@@ -1788,21 +1778,18 @@
                 return [document.querySelector(".info-detail").__vue__.fileDetail];
             }
         },
-
         detectPage() {
             let path = location.pathname;
             if (/^\/web\/main/.test(path)) return 'home';
             if (/^\/web\/share/.test(path)) return 'share';
             return '';
         },
-
         isOnlyFolder() {
             for (let i = 0; i < selectList.length; i++) {
                 if (!selectList[i].isFolder) return false;
             }
             return true;
         },
-
         showMainDialog(title, html, footer) {
             Swal.fire({
                 title,
@@ -1817,14 +1804,11 @@
                 customClass,
             });
         },
-
         async initPanLinker() {
             base.initDefaultConfig();
             base.addPanLinkerStyle();
             pt = this.detectPage();
-            let res = await base.post
-            (`https://api.youxiaohou.com/config/v2/tianyi?ver=${version}&a=${author}`, {}, {}, 'text');
-            pan = JSON.parse(base.d(res));
+            pan = LOCAL_CONFIG.tianyi;
             Object.freeze && Object.freeze(pan);
             this.addButton();
             this.getToken();
@@ -1832,10 +1816,7 @@
             base.registerMenuCommand();
         }
     };
-
-
     let xunlei = {
-
         _homeSelectors: [
             '.FileMenu__menus--HFKwO',
             '.FileMenu__menu--XBFEH',
@@ -1843,52 +1824,48 @@
             '.file-menu',
             '.source-list-menu',
         ],
-
         convertLinkToAria(link, filename, ua) {
             filename = base.fixFilename(filename);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}"`);
         },
-
         convertLinkToBC(link, filename, ua) {
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}ZZ`;
             return encodeURIComponent(`bc://http/${base.e(bc)}`);
         },
-
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}"`);
         },
-
         addPageListener() {
             doc.on('click', '.pl-button-mode', (e) => {
                 mode = e.target.dataset.mode;
                 Swal.showLoading();
                 this.getPCSLink();
             });
-
             doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
                 $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
             });
-
+            doc.on('click', '.listener-link-media', async (e) => {
+                e.preventDefault();
+                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+                $(e.currentTarget).text('已触发下载，若未弹出请检查浏览器下载设置').animate({opacity: '0.5'}, "slow");
+            });
             doc.on('click', '.listener-link-api-btn', async (e) => {
                 base.setClipboard(e.target.dataset.filename);
                 $(e.target).text('复制成功').animate({opacity: '0.5'}, "slow");
             });
-
             doc.on('click', '.listener-link-bc-btn', async (e) => {
                 let mirror = base.getMirrorList(e.target.dataset.dlink, pan.mirror);
                 base.setClipboard(mirror);
                 $(e.target).text('复制成功').animate({opacity: '0.5'}, "slow");
             });
-
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
                 base.setClipboard(decodeURIComponent(e.target.dataset.link));
                 $(e.target).text('复制成功，快去粘贴吧！').animate({opacity: '0.5'}, "slow");
             });
-
             doc.on('click', '.listener-link-rpc', async (e) => {
                 let target = $(e.currentTarget);
                 target.find('.icon').remove();
@@ -1901,17 +1878,14 @@
                     target.addClass('pl-btn-danger').text('发送失败，请检查您的RPC配置信息！').animate({opacity: '0.5'}, "slow");
                 }
             });
-
             doc.on('click', '.listener-send-rpc', (e) => {
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-
             doc.on('click', '.listener-open-setting', () => {
                 base.showSetting();
             });
         },
-
         _findHomeContainer() {
             if (pan.btn && pan.btn.home) {
                 let el = document.querySelector(pan.btn.home);
@@ -1923,12 +1897,10 @@
             }
             return null;
         },
-
         addButton() {
             if (!pt) return;
             let $toolWrap;
             let $button = $(`<div class="xunlei-button pl-button"><i class="xlpfont xlp-download"></i><span style="font-size: 13px;margin-left: 6px;">下载助手</span><ul class="pl-dropdown-menu" style="top: 34px;"><li class="pl-dropdown-menu-item pl-button-mode" data-mode="api">API下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="aria" >Aria下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="rpc">RPC下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="curl">cURL下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="bc" >BC下载</li><li class="pl-dropdown-menu-item pl-button-mode listener-open-setting">助手设置</li></ul></div>`);
-
             if (pt === 'home') {
                 base.listenElement(null, () => {
                     let container = this._findHomeContainer();
@@ -1944,7 +1916,6 @@
                     }
                 });
             }
-
             if (pt === 'share') {
                 $button.css({'margin-right': '10px'});
                 base.listenElement(pan.btn.share, () => {
@@ -1952,11 +1923,9 @@
                     $('.pl-button').length === 0 && $toolWrap.prepend($button);
                 })
             }
-
             base.createDownloadIframe();
             this.addPageListener();
         },
-
         _smartListen(callback) {
             const checkInterval = 500;
             function check() {
@@ -1965,12 +1934,10 @@
             }
             check();
         },
-
         addInitButton() {
             if (!pt) return;
             let $toolWrap;
             let $button = $(`<div class="xunlei-button pl-button-init"><i class="xlpfont xlp-download"></i><span style="font-size: 13px;margin-left: 6px;">下载助手</span></div>`);
-
             if (pt === 'home') {
                 this._smartListen(() => {
                     let container = this._findHomeContainer();
@@ -1979,7 +1946,6 @@
                     }
                 });
             }
-
             if (pt === 'share') {
                 $button.css({'margin-right': '10px'});
                 base.listenElement(pan.btn.share, () => {
@@ -1987,10 +1953,8 @@
                     $('.pl-button-init').length === 0 && $toolWrap.prepend($button);
                 })
             }
-
             $button.click(() => {});
         },
-
         getToken() {
             let credentials = {}, captcha = {};
             for (let i = 0; i < localStorage.length; i++) {
@@ -2002,7 +1966,6 @@
                     captcha = base.getStorage(key);
                 }
             }
-
             let deviceid = '';
             try {
                 let lsDevice = base.getStorage('deviceid');
@@ -2016,7 +1979,6 @@
                     }
                 }
             } catch (e) {}
-
             if (!deviceid) {
                 let cookieDevice = base.getCookie('peerid') || base.getCookie('deviceid');
                 if (cookieDevice) {
@@ -2032,13 +1994,11 @@
                     }
                 }
             }
-
             if (!deviceid) {
                 deviceid = Array.from({length: 32}, () =>
                     Math.floor(Math.random() * 16).toString(16)
                 ).join('');
             }
-
             let token = {
                 credentials,
                 captcha,
@@ -2046,34 +2006,36 @@
             };
             return token;
         },
-
         async getFileUrlByOnce(item, index, token) {
             try {
                 if (item.downloadUrl) return {
                     index,
                     downloadUrl: item.downloadUrl
                 };
-
                 let headers = {
                     'content-type': "application/json",
                     'x-device-id': token.deviceid,
                 };
-
                 if (token.credentials && token.credentials.access_token) {
                     let tokenType = token.credentials.token_type || 'Bearer';
                     headers['Authorization'] = `${tokenType} ${token.credentials.access_token}`;
                 }
-
                 if (token.captcha && token.captcha.token) {
                     headers['x-captcha-token'] = token.captcha.token;
                 }
-
                 let res = await base.get(pan.pcs[0] + item.id, headers);
-
                 if (res.web_content_link) {
+                    let mediaLink = '';
+                    if (Array.isArray(res.medias) && res.medias.length > 0) {
+                        let media = res.medias.find(m => m && m.link && m.link.url && m.media_name !== '原始画质') || res.medias[0];
+                        if (media && media.link && media.link.url) {
+                            mediaLink = media.link.url;
+                        }
+                    }
                     return {
                         index,
-                        downloadUrl: res.web_content_link
+                        downloadUrl: res.web_content_link,
+                        mediaLink
                     };
                 } else if (res.reason) {
                     return {
@@ -2093,31 +2055,27 @@
                 };
             }
         },
-
         async getPCSLink() {
             selectList = this.getSelectedList();
             if (selectList.length === 0) {
                 return message.error('提示：请先勾选要下载的文件！');
             }
-
             if (this.isOnlyFolder()) {
                 return message.error('提示：请打开文件夹后勾选文件！');
             }
-
             if (pt === 'home') {
                 let queue = [];
                 let token = this.getToken();
-
                 if (!token.credentials || !token.credentials.access_token) {
                     return message.error('提示：登录凭证获取失败，请先登录网盘后刷新页面！');
                 }
-
                 selectList.forEach((item, index) => {
                     queue.push(this.getFileUrlByOnce(item, index, token));
                 });
                 const res = await Promise.all(queue);
                 res.forEach(val => {
                     selectList[val.index].downloadUrl = val.downloadUrl;
+                    if (val.mediaLink) selectList[val.index].mediaLink = val.mediaLink;
                 });
             } else {
                 let dialog = await Swal.fire({
@@ -2133,29 +2091,25 @@
                     return;
                 }
             }
-
             let html = this.generateDom(selectList);
             this.showMainDialog(pan[mode][0], html, pan[mode][1]);
         },
-
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
-
             list.forEach((v, i) => {
                 if (v.kind === 'drive#folder') return;
                 let filename = v.name;
                 let size = base.sizeFormat(+v.size);
                 let dlink = v.downloadUrl;
-
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${dlink}" data-index="${i}">${dlink}</a>
+                                    ${v.mediaLink ? `<button class="pl-item-link listener-link-media pl-btn-primary" data-filename="${filename}" data-link="${v.mediaLink}" data-index="${i}">云播转码下载(更小更快)</button>` : ''}
                                     <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                     </div>`;
                 }
-
                 if (mode === 'aria') {
                     let alink = this.convertLinkToAria(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
@@ -2163,13 +2117,11 @@
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <a class="pl-item-link listener-link-aria" href="${alink}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${alink}">${decodeURIComponent(alink)}</a> </div>`;
                 }
-
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${dlink}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
-
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
@@ -2177,7 +2129,6 @@
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <a class="pl-item-link listener-link-aria" href="${alink}" title="点击复制curl链接" data-filename="${filename}" data-link="${alink}">${decodeURIComponent(alink)}</a> </div>`;
                 }
-
                 if (mode === 'bc') {
                     let alink = this.convertLinkToBC(dlink, filename, navigator.userAgent);
                     content += `<div class="pl-item">
@@ -2187,23 +2138,17 @@
                                     </div>`;
                 }
             });
-
             content += '</div>';
-
             if (mode === 'aria')
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button></div>`;
-
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc">发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px">设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
-
             if (mode === 'curl')
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;">设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')]}）</button></div>`;
-
             return content;
         },
-
         async sendLinkToRPC(filename, link) {
             let rpc = {
                 domain: base.getValue('setting_rpc_domain'),
@@ -2231,7 +2176,6 @@
                 return 'fail';
             }
         },
-
         getSelectedList() {
             try {
                 let doms = document.querySelectorAll('.SourceListItem__item--XxpOC');
@@ -2247,7 +2191,6 @@
                     }
                     if (selectedList.length > 0) return selectedList;
                 }
-
                 let allItems = document.querySelectorAll('[class*="SourceListItem__item"]');
                 if (allItems.length > 0) {
                     let selectedList = [];
@@ -2263,20 +2206,17 @@
                     }
                     if (selectedList.length > 0) return selectedList;
                 }
-
                 let app = document.querySelector('#__nuxt') || document.querySelector('#app');
                 if (app && app.__vue__) {
                     let rootVue = app.__vue__;
                     let found = this._findSelectedInVueTree(rootVue, 0);
                     if (found && found.length > 0) return found;
                 }
-
                 return [];
             } catch (e) {
                 return [];
             }
         },
-
         _findSelectedInVueTree(vm, depth) {
             if (depth > 8 || !vm) return null;
             try {
@@ -2292,21 +2232,18 @@
             } catch (e) {}
             return null;
         },
-
         detectPage() {
             let path = location.pathname;
             if (/^\/$/.test(path)) return 'home';
             if (/^\/(s|share)\//.test(path)) return 'share';
             return '';
         },
-
         isOnlyFolder() {
             for (let i = 0; i < selectList.length; i++) {
                 if (selectList[i].kind === 'drive#file') return false;
             }
             return true;
         },
-
         showMainDialog(title, html, footer) {
             Swal.fire({
                 title,
@@ -2321,67 +2258,31 @@
                 customClass,
             });
         },
-
         async initPanLinker() {
             base.initDefaultConfig();
             base.addPanLinkerStyle();
             pt = this.detectPage();
-
-            try {
-                let res = await base.post
-                (`https://api.youxiaohou.com/config/v2/xunlei?ver=${version}&a=${author}`, {}, {}, 'text');
-                pan = JSON.parse(base.d(res));
-                Object.freeze && Object.freeze(pan);
-            } catch (e) {
-                console.warn('[panlinker] xunlei config load failed, using fallback');
-                pan = {
-                    code: 200,
-                    pcs: {"0": "https://api-pan.xunlei.com/drive/v1/files/"},
-                    btn: {
-                        home: '.FileMenu__menus--HFKwO',
-                        share: '.Share__batchActionBox--VKPyr'
-                    },
-                    d: '',
-                    num: '865746',
-                    version: '6.2.7',
-                    mirror: [],
-                    init: {"0": "请输入暗号", "5": "请先安装 Tampermonkey BETA（篡改猴 BETA）"},
-                    api: {"0": "API下载", "1": ""},
-                    aria: {"0": "Aria下载", "1": ""},
-                    rpc: {"0": "RPC下载", "1": ""},
-                    curl: {"0": "cURL下载", "1": ""},
-                    bc: {"0": "BC下载", "1": ""},
-                    footer: '',
-                    new: '',
-                    newX: ''
-                };
-            }
-
+            pan = LOCAL_CONFIG.xunlei;
+            Object.freeze && Object.freeze(pan);
             this.addButton();
             base.createTip();
             base.registerMenuCommand();
         }
     };
-
-
     let quark = {
-
         convertLinkToAria(link, filename, ua) {
             filename = base.fixFilename(filename);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}" --header "Cookie: ${document.cookie}"`);
         },
-
         convertLinkToBC(link, filename, ua) {
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&cookie=${encodeURIComponent(document.cookie)}ZZ`;
             return encodeURIComponent(`bc://http/${base.e(bc)}`);
         },
-
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -b "${document.cookie}"`);
         },
-
         addPageListener() {
             window.addEventListener('hashchange', async (e) => {
                 let home = 'https://pan.quark.cn/list#/', all = 'https://pan.quark.cn/list#/list/all';
@@ -2424,7 +2325,6 @@
                 base.showSetting();
             });
         },
-
         addButton() {
             if (!pt) return;
             let $toolWrap;
@@ -2443,7 +2343,6 @@
                 });
             }
         },
-
         addInitButton() {
             if (!pt) return;
             let $toolWrap;
@@ -2463,7 +2362,6 @@
             }
             $button.click(() => {});
         },
-
         async getPCSLink() {
             selectList = this.getSelectedList();
             if (selectList.length === 0) {
@@ -2503,7 +2401,6 @@
                 }
             }
         },
-
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
@@ -2556,7 +2453,6 @@
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;">设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')]}）</button></div>`;
             return content;
         },
-
         async sendLinkToRPC(filename, link) {
             let rpc = {
                 domain: base.getValue('setting_rpc_domain'),
@@ -2565,7 +2461,6 @@
                 token: base.getValue('setting_rpc_token'),
                 dir: base.getValue('setting_rpc_dir'),
             };
-
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
             let rpcData = {
                 id: new Date().getTime(),
@@ -2585,7 +2480,6 @@
                 return 'fail';
             }
         },
-
         getSelectedList() {
             try {
                 let selectedList = [];
@@ -2606,21 +2500,18 @@
                 return [];
             }
         },
-
         detectPage() {
             let path = location.pathname;
             if (/^\/(list)/.test(path)) return 'home';
             if (/^\/(s|share)\//.test(path)) return 'share';
             return '';
         },
-
         isOnlyFolder() {
             for (let i = 0; i < selectList.length; i++) {
                 if (selectList[i].file) return false;
             }
             return true;
         },
-
         showMainDialog(title, html, footer) {
             Swal.fire({
                 title,
@@ -2635,14 +2526,11 @@
                 customClass,
             });
         },
-
         async initPanLinker() {
             base.initDefaultConfig();
             base.addPanLinkerStyle();
             pt = this.detectPage();
-            let res = await base.post
-            (`https://api.youxiaohou.com/config/v2/quark?ver=${version}&a=${author}`, {}, {}, 'text');
-            pan = JSON.parse(base.d(res));
+            pan = LOCAL_CONFIG.quark;
             Object.freeze && Object.freeze(pan);
             this.addButton();
             this.addPageListener();
@@ -2651,25 +2539,20 @@
             base.registerMenuCommand();
         }
     };
-
     let yidong = {
-
         convertLinkToAria(link, filename, ua) {
             filename = base.fixFilename(filename);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}"`);
         },
-
         convertLinkToBC(link, filename, ua) {
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}ZZ`;
             return encodeURIComponent(`bc://http/${base.e(bc)}`);
         },
-
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}"`);
         },
-
         addPageListener() {
             doc.on('click', '.pl-button-mode', (e) => {
                 mode = e.target.dataset.mode;
@@ -2705,7 +2588,6 @@
                 base.showSetting();
             });
         },
-
         addButton() {
             if (!pt) return;
             let $toolWrap;
@@ -2726,7 +2608,6 @@
             base.createDownloadIframe();
             this.addPageListener();
         },
-
         addInitButton() {
             if (!pt) return;
             let $toolWrap;
@@ -2746,7 +2627,6 @@
             }
             $button.click(() => {});
         },
-
         getRandomString(len) {
             len = len || 16;
             let $chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678';
@@ -2757,7 +2637,6 @@
             }
             return pwd;
         },
-
         utob(str) {
             const u = String.fromCharCode;
             return str.replace(/[\uD800-\uDBFF][\uDC00-\uDFFFF]|[^\x00-\x7F]/g, (t) => {
@@ -2769,7 +2648,6 @@
                 return u(240 | e >>> 18 & 7) + u(128 | e >>> 12 & 63) + u(128 | e >>> 6 & 63) + u(128 | 63 & e);
             });
         },
-
         getSign(e, t, a, n) {
             let r = "",
                 i = "";
@@ -2786,7 +2664,6 @@
             let l = md5(a + ":" + n);
             return md5(A + l).toUpperCase();
         },
-
         async getFileUrlByOnce(item, index) {
             try {
                 if (item.downloadUrl) return {
@@ -2795,33 +2672,38 @@
                 };
                 if (this.detectPage() === 'home') {
                     let body = {
-                        "contentID": item.contentID,
-                        "commonAccountInfo": {"account": item.owner, "accountType": 1},
-                        "operation": "0",
-                        "inline": "0",
-                        "extInfo": {"isReturnCdnDownloadUrl": "1"}
+                        "fileId": item.contentID
                     };
                     let time = new Date(+new Date() + 8 * 3600 * 1000).toJSON().substr(0, 19).replace('T', ' ');
                     let key = this.getRandomString(16);
                     let sign = this.getSign(undefined, body, time, key);
-
                     let res = await base.post(pan.pcs[0], body, {
                         'authorization': base.getCookie('authorization'),
-                        'x-huawei-channelSrc': '10000034',
-                        'x-inner-ntwk': '2',
+                        'caller': 'web',
+                        'content-type': "application/json;charset=UTF-8",
+                        'CMS-DEVICE': 'default',
                         'mcloud-channel': '1000101',
                         'mcloud-client': '10701',
                         'mcloud-sign': time + "," + key + "," + sign,
-                        'content-type': "application/json;charset=UTF-8",
-                        'caller': 'web',
-                        'CMS-DEVICE': 'default',
-                        'x-DeviceInfo': '||9|7.12.0|chrome|118.0.0.0||windows 10||zh-CN|||',
-                        'x-SvcType': '1',
+                        'mcloud-version': '7.14.2',
+                        'x-deviceinfo': '||9|7.17.0|edge||||windows 10||zh-CN|||',
+                        'x-huawei-channelsrc': '10000034',
+                        'x-inner-ntwk': '2',
+                        'x-m4c-caller': 'PC',
+                        'x-m4c-src': '10002',
+                        'x-svctype': '1',
+                        'x-yun-api-version': 'v1',
+                        'x-yun-app-channel': '10000034',
+                        'x-yun-channel-source': '10000034',
+                        'x-yun-client-info': '||9|7.17.0|edge||||windows 10||zh-CN|||||',
+                        'x-yun-module-type': '100',
+                        'x-yun-svc-type': '1',
+                        'x-yun-url-type': '3',
                     });
                     if (res.success) {
                         return {
                             index,
-                            downloadUrl: res.data.downloadURL
+                            downloadUrl: res.data.url
                         };
                     } else {
                         return {
@@ -2832,7 +2714,6 @@
                 }
                 if (this.detectPage() === 'share') {
                     let vueDom = document.querySelector(".main_file_list").__vue__;
-
                     let res = await base.post(pan.pcs[1], `linkId=${vueDom.linkID}&contentIds=${item.path}&catalogIds=`, {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     });
@@ -2855,30 +2736,29 @@
                 };
             }
         },
-
         async getPCSLink() {
             selectList = this.getSelectedList();
             if (selectList.length === 0) {
                 return message.error('提示：请先勾选要下载的文件！');
             }
             if (this.isOnlyFolder()) {
-                return message.error('提示：请打开文件夹后勾选文件！');
+                return message.error('提示：勾选的全是文件夹，脚本仅支持下载文件，请打开文件夹后勾选文件！');
             }
-
+            selectList = selectList.filter(v => v && v.contentID);
+            if (selectList.length === 0) {
+                return message.error('提示：未获取到文件标识，请刷新页面后重试！');
+            }
             let queue = [];
             selectList.forEach((item, index) => {
                 queue.push(this.getFileUrlByOnce(item, index));
             });
-
             const res = await Promise.all(queue);
             res.forEach(val => {
                 selectList[val.index].downloadUrl = val.downloadUrl;
             });
-
             let html = this.generateDom(selectList);
             this.showMainDialog(pan[mode][0], html, pan[mode][1]);
         },
-
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
@@ -2930,7 +2810,6 @@
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}">复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;">设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')]}）</button></div>`;
             return content;
         },
-
         async sendLinkToRPC(filename, link) {
             let rpc = {
                 domain: base.getValue('setting_rpc_domain'),
@@ -2939,7 +2818,6 @@
                 token: base.getValue('setting_rpc_token'),
                 dir: base.getValue('setting_rpc_dir'),
             };
-
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
             let rpcData = {
                 id: new Date().getTime(),
@@ -2959,11 +2837,33 @@
                 return 'fail';
             }
         },
-
         getSelectedList() {
+            let normalize = (item, vue) => {
+                if (!item || typeof item !== 'object') return null;
+                if (!item.owner && vue) {
+                    try {
+                        let root = vue.$root || vue;
+                        let s = root && root.$data;
+                        if (s) {
+                            let owner = s.owner || s.account ||
+                                (s.userInfo && (s.userInfo.account || s.userInfo.phone)) ||
+                                (s.globalInfo && (s.globalInfo.account || s.globalInfo.phone)) || '';
+                            if (owner) item.owner = owner;
+                        }
+                    } catch (e) {}
+                }
+                return item;
+            };
+            let result = [];
             try {
-                return document.querySelector(".main_file_list").__vue__.selectList.map(val => val.item);
-            } catch (e) {
+                let vue = document.querySelector(".main_file_list").__vue__;
+                let list = vue.selectList;
+                if (Array.isArray(list) && list.length) {
+                    result = list.map(val => normalize(val.item, vue)).filter(Boolean);
+                    if (result.length) return result;
+                }
+            } catch (e) {}
+            try {
                 let vueDom = document.querySelector(".home-page").__vue__;
                 let fileList = vueDom._computedWatchers.fileList.value;
                 let dirList = vueDom._computedWatchers.dirList.value;
@@ -2975,24 +2875,49 @@
                 let selectDirList = dirList.filter((v, i) => {
                     return selectedDirIndex.includes(i);
                 });
-                return [...selectFileList, ...selectDirList];
-            }
+                let list = [...selectFileList, ...selectDirList];
+                if (list.length) {
+                    result = list.map(v => normalize(v, vueDom)).filter(Boolean);
+                    if (result.length) return result;
+                }
+            } catch (e) {}
+            try {
+                let containers = document.querySelectorAll('.main_file_list, [class*="file-list"], [class*="fileList"], .file-box, .home-page');
+                let markSelectors = ['[class*="selected"]', '[class*="checked"]', 'input[type="checkbox"]:checked'];
+                containers.forEach(container => {
+                    markSelectors.forEach(sel => {
+                        container.querySelectorAll(sel).forEach(dom => {
+                            let vue = dom.__vue__ || (dom.parentElement && dom.parentElement.__vue__) ||
+                                (dom.closest && dom.closest('[class*="item"]') && dom.closest('[class*="item"]').__vue__);
+                            if (!vue) return;
+                            let item = vue.item || vue.fileData || vue.info ||
+                                (vue.$props && (vue.$props.item || vue.$props.file || vue.$props.data));
+                            if (!item && vue.$data) {
+                                item = vue.$data.item || vue.$data.fileData || vue.$data.info;
+                            }
+                            item = normalize(item, vue);
+                            if (item && !result.includes(item)) result.push(item);
+                        });
+                    });
+                });
+                if (result.length) return result;
+            } catch (e) {}
+            return [];
         },
-
         detectPage() {
             let path = location.pathname;
             if (/^\/w/.test(path)) return 'home';
             if (/^\/link|shareweb/.test(path)) return 'share';
             return '';
         },
-
         isOnlyFolder() {
             for (let i = 0; i < selectList.length; i++) {
-                if (selectList[i].fileEtag || selectList[i].coName) return false;
+                let v = selectList[i] || {};
+                if (v.kind === 'folder' || v.folder === true || v.isFolder === true || v.contentType === 'folder' || v.contentType === 'dir') continue;
+                return false;
             }
             return true;
         },
-
         showMainDialog(title, html, footer) {
             Swal.fire({
                 title,
@@ -3007,21 +2932,17 @@
                 customClass,
             });
         },
-
         async initPanLinker() {
             base.initDefaultConfig();
             base.addPanLinkerStyle();
             pt = this.detectPage();
-            let res = await base.post
-            (`https://api.youxiaohou.com/config/v2/yidong?ver=${version}&a=${author}`, {}, {}, 'text');
-            pan = JSON.parse(base.d(res));
+            pan = LOCAL_CONFIG.yidong;
             Object.freeze && Object.freeze(pan);
             this.addButton();
             base.createTip();
             base.registerMenuCommand();
         }
     };
-
     let main = {
         init() {
             if (/(pan|yun).baidu.com/.test(location.host)) {
@@ -3047,6 +2968,5 @@
             }
         }
     };
-
     main.init();
 })();

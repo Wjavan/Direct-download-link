@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              网盘直链下载助手
 // @namespace         https://github.com/Wjavan/Direct-download-link
-// @version           1.0.0
+// @version           1.1.0
 // @author            Wjavan
 // @description       基于油小猴(youxiaohou.com)的网盘直链下载助手修改。支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持多种下载协议：HTTP/JSON-RPC/cURL。支持多种下载器：IDM/XDown/Aria2/NDM/Motrix/终端。
 // @description:en    A fork of youxiaohou's Pan Download Helper. Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.
@@ -617,7 +617,10 @@
             let fidlist = [];
             selectList.forEach(v => {
                 if (+v.isdir === 1) return;
-                fidlist.push(v.fs_id);
+                // 兼容界面字段变化（fs_id / file_id / id），缺失则跳过
+                let fid = v.fs_id !== undefined && v.fs_id !== null ? v.fs_id
+                    : (v.file_id !== undefined && v.file_id !== null ? v.file_id : v.id);
+                if (fid !== undefined && fid !== null && fid !== '') fidlist.push(fid);
             });
             return '[' + fidlist + ']';
         },
@@ -633,18 +636,26 @@
             ins = {};
             request = {};
         },
-        setBDUSS() {
+        setBDUSS(done) {
+            const save = (BDUSS) => {
+                if (BDUSS) base.setStorage("baiduyunPlugin_BDUSS", {BDUSS});
+                done && done(!!BDUSS);
+            };
             try {
-                GM_cookie && GM_cookie('list', {name: 'BDUSS'}, (cookies, error) => {
-                    if (!error) {
-                        let BDUSS = cookies?.[0]?.value;
-                        if (BDUSS) {
-                            base.setStorage("baiduyunPlugin_BDUSS", {BDUSS});
+                if (GM_cookie) {
+                    GM_cookie('list', {name: 'BDUSS'}, (cookies, error) => {
+                        if (!error && cookies && cookies[0] && cookies[0].value) {
+                            save(cookies[0].value);
+                        } else {
+                            // GM_cookie 读不到 httpOnly 时退回 document.cookie
+                            save(base.getCookie('BDUSS'));
                         }
-                    }
-                });
+                    });
+                    return;
+                }
             } catch (e) {
             }
+            save(base.getCookie('BDUSS'));
         },
         getBDUSS() {
             let baiduyunPlugin_BDUSS = base.getStorage('baiduyunPlugin_BDUSS') ? base.getStorage('baiduyunPlugin_BDUSS') : '{"baiduyunPlugin_BDUSS":""}';
@@ -652,38 +663,22 @@
         },
         convertLinkToAria(link, filename, ua) {
             let BDUSS = this.getBDUSS();
-            if (!!BDUSS) {
-                filename = base.fixFilename(filename);
-                return encodeURIComponent(`aria2c "${link}" --out "${filename}" --header "User-Agent: ${ua}" --header "Cookie: BDUSS=${BDUSS}"`);
-            }
-            return {
-                link: '',
-                text: '未获取到BDUSS Cookie，请确保已登录百度网盘'
-            };
+            filename = base.fixFilename(filename);
+            let cookie = BDUSS ? ` --header "Cookie: BDUSS=${BDUSS}"` : '';
+            return encodeURIComponent(`aria2c "${link}" --out "${filename}" --header "User-Agent: ${ua}"${cookie}`);
         },
         convertLinkToBC(link, filename, ua) {
             let BDUSS = this.getBDUSS();
-            if (!!BDUSS) {
-                let cookie = `BDUSS=${BDUSS}`;
-                let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&cookie=${encodeURIComponent(cookie)}&user_agent=${encodeURIComponent(ua)}ZZ`;
-                return encodeURIComponent(`bc://http/${base.e(bc)}`);
-            }
-            return {
-                link: '',
-                text: '未获取到BDUSS Cookie，请确保已登录百度网盘'
-            };
+            let cookie = BDUSS ? `BDUSS=${BDUSS}` : '';
+            let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&cookie=${encodeURIComponent(cookie)}&user_agent=${encodeURIComponent(ua)}ZZ`;
+            return encodeURIComponent(`bc://http/${base.e(bc)}`);
         },
         convertLinkToCurl(link, filename, ua) {
             let BDUSS = this.getBDUSS();
-            if (!!BDUSS) {
-                let terminal = base.getValue('setting_terminal_type');
-                filename = base.fixFilename(filename);
-                return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -A "${ua}" -b "BDUSS=${BDUSS}"`);
-            }
-            return {
-                link: '',
-                text: '未获取到BDUSS Cookie，请确保已登录百度网盘'
-            };
+            let terminal = base.getValue('setting_terminal_type');
+            filename = base.fixFilename(filename);
+            let cookie = BDUSS ? ` -b "BDUSS=${BDUSS}"` : '';
+            return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -A "${ua}"${cookie}`);
         },
         addPageListener() {
             function _factory(e) {
@@ -785,7 +780,7 @@
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
                 if (!e.target.dataset.link) {
-                    $(e.target).removeClass('listener-copy-all').addClass('pl-btn-danger').html(`未获取到BDUSS Cookie，请确保已登录百度网盘后刷新页面`);
+                    $(e.target).removeClass('listener-copy-all').addClass('pl-btn-danger').html(`复制失败，请重新获取下载链接`);
                 } else {
                     base.setClipboard(decodeURIComponent(e.target.dataset.link));
                     $(e.target).text('复制成功，快去粘贴吧！').animate({opacity: '0.5'}, "slow");
@@ -799,8 +794,6 @@
                 let res = await this.sendLinkToRPC(e.currentTarget.dataset.filename, e.currentTarget.dataset.link);
                 if (res === 'success') {
                     target.removeClass('pl-btn-danger').html('发送成功，快去看看吧！').animate({opacity: '0.5'}, "slow");
-                } else if (res === 'assistant') {
-                    target.addClass('pl-btn-danger').html(`未获取到BDUSS Cookie，请确保已登录百度网盘后刷新页面`);
                 } else {
                     target.addClass('pl-btn-danger').text('发送失败，请检查您的RPC配置信息！').animate({opacity: '0.5'}, "slow");
                 }
@@ -846,11 +839,17 @@
             $button.click(() => {});
         },
         async getToken() {
-            const openTab = () => {
-                GM_openInTab(pan.pcs[3], {active: false, insert: true, setParent: true});
-                base.deleteValue('baidu_access_token');
+            const saveToken = (token) => {
+                if (token) {
+                    base.setValue('baidu_access_token', token);
+                    base.setValue('baidu_access_token_bduss', this.getBDUSS());
+                    this.getCurrentUK().then((uk) => {
+                        if (uk) base.setValue('baidu_access_token_uk', uk);
+                    });
+                }
+                return token;
             };
-            const waitForToken = () => new Promise((resolve) => {
+            const waitForToken = (maxAttempts = 30) => new Promise((resolve) => {
                 let attempts = 0;
                 const interval = setInterval(() => {
                     const token = base.getValue('baidu_access_token');
@@ -859,48 +858,91 @@
                         resolve(token);
                     }
                     attempts++;
-                    if (attempts > 60) {
+                    if (attempts > maxAttempts) {
                         clearInterval(interval);
                         resolve('');
                     }
                 }, 1000);
             });
-            if (manageHandler === 'Tampermonkey' && base.getMajorVersion(manageVersion) >= 5) {
-                openTab();
-                return waitForToken();
+            // 方式1：HTTP 静默授权，模拟在授权页点击"授权"
+            try {
+                if (base.getFinalUrl) {
+                    let res = await base.getFinalUrl(pan.pcs[3]);
+                    if (res.includes('authorize')) {
+                        let html = await base.get(pan.pcs[3], {}, 'text');
+                        let bdstoken = html.match(/name="bdstoken"\s+value="([^"]+)"/)?.[1];
+                        let client_id = html.match(/name="client_id"\s+value="([^"]+)"/)?.[1];
+                        if (bdstoken && client_id) {
+                            let data = {
+                                grant_permissions_arr: 'netdisk',
+                                bdstoken: bdstoken,
+                                client_id: client_id,
+                                response_type: 'token',
+                                display: 'page',
+                                grant_permissions: 'basic,netdisk'
+                            };
+                            await base.post(pan.pcs[3], base.stringify(data), {'Content-Type': 'application/x-www-form-urlencoded'});
+                            let res2 = await base.getFinalUrl(pan.pcs[3]);
+                            return saveToken(res2.match(/access_token=([^&]+)/)?.[1]);
+                        }
+                    } else {
+                        return saveToken(res.match(/access_token=([^&]+)/)?.[1]);
+                    }
+                }
+            } catch (e) {
             }
-            let res = await base.getFinalUrl(pan.pcs[3]);
-            if (!res.includes('authorize') && !res.includes('access_token=')) {
-                openTab();
-                return waitForToken();
-            }
-            if (res.includes('authorize')) {
-                let html = await base.get(pan.pcs[3], {}, 'text');
-                let bdstoken = html.match(/name="bdstoken"\s+value="([^"]+)"/)?.[1];
-                let client_id = html.match(/name="client_id"\s+value="([^"]+)"/)?.[1];
-                let data = {
-                    grant_permissions_arr: 'netdisk',
-                    bdstoken: bdstoken,
-                    client_id: client_id,
-                    response_type: "token",
-                    display: "page",
-                    grant_permissions: "basic,netdisk"
-                };
-                await base.post(pan.pcs[3], base.stringify(data), {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                });
-                let res2 = await base.getFinalUrl(pan.pcs[3]);
-                let accessToken = res2.match(/access_token=([^&]+)/)?.[1];
-                accessToken && base.setValue('baidu_access_token', accessToken);
-                return accessToken;
-            }
-            let accessToken = res.match(/access_token=([^&]+)/)?.[1];
-            accessToken && base.setValue('baidu_access_token', accessToken);
-            return accessToken;
+            // 方式2：隐藏 iframe，最多等 12 秒
+            let frame = document.createElement('iframe');
+            frame.id = 'pl-auth-frame';
+            frame.style.cssText = 'display:none;width:0;height:0;border:0;';
+            frame.src = pan.pcs[3];
+            document.body.appendChild(frame);
+            let token = await waitForToken(12);
+            frame.remove();
+            return saveToken(token);
+        },
+        // 当前登录账号的 uk，用于判断 token 是否属于当前账号
+        async getCurrentUK() {
+            try {
+                let res = await Promise.race([
+                    base.get('https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo', {"User-Agent": pan.ua}),
+                    new Promise((resolve) => setTimeout(() => resolve(null), 3000))
+                ]);
+                if (res && res.errno === 0 && res.user_info && res.user_info.uk) {
+                    return String(res.user_info.uk);
+                }
+            } catch (e) {}
+            return '';
+        },
+        // 页面加载时后台检查账号是否已切换，切换则静默换 token
+        async preflightAccount() {
+            try {
+                let accessToken = base.getValue('baidu_access_token');
+                let storedUK = base.getValue('baidu_access_token_uk');
+                if (!accessToken || !storedUK) return;
+                let currentUK = await this.getCurrentUK();
+                if (!currentUK) return;
+                if (currentUK !== storedUK) {
+                    console.log('[网盘助手] 预检：检测到账号切换', storedUK, '→', currentUK, '，后台静默重新授权');
+                    base.deleteValue('baidu_access_token');
+                    base.deleteValue('baidu_access_token_bduss');
+                    base.deleteValue('baidu_access_token_uk');
+                    await this.getToken();
+                    console.log('[网盘助手] 预检：已静默换好当前账号 token');
+                }
+            } catch (e) {}
         },
         async getPCSLink(maxRequestTime = 1) {
             selectList = this.getSelectedList();
             let fidList = this._getFidList(), url, res;
+            try {
+                console.log('[网盘助手] 选中信息:', JSON.stringify({
+                    pt,
+                    selectLen: selectList.length,
+                    fidList,
+                    sampleKeys: selectList[0] ? Object.keys(selectList[0]).slice(0, 15) : null
+                }));
+            } catch (e) {}
             if (pt === 'home' || pt === 'main') {
                 if (selectList.length === 0) {
                     return message.error('提示：请先勾选要下载的文件！');
@@ -909,7 +951,29 @@
                     return message.error('提示：请打开文件夹后勾选文件！');
                 }
                 fidList = encodeURIComponent(fidList);
-                let accessToken = base.getValue('baidu_access_token') || await this.getToken();
+                // token 归属账号与当前账号不一致时作废，重新授权
+                let currentBDUSS = this.getBDUSS();
+                let storedBDUSS = base.getValue('baidu_access_token_bduss');
+                let accessToken = base.getValue('baidu_access_token');
+                if (accessToken) {
+                    let currentUK = await this.getCurrentUK();
+                    let storedUK = base.getValue('baidu_access_token_uk');
+                    let mismatch = false;
+                    if (currentUK && storedUK && storedUK !== currentUK) mismatch = true;
+                    if (!mismatch && currentBDUSS && storedBDUSS && storedBDUSS !== currentBDUSS) mismatch = true;
+                    if (mismatch) {
+                        console.log('[网盘助手] 检测到账号切换（uk', storedUK, '→', currentUK, '），作废旧 token 并重新授权');
+                        base.deleteValue('baidu_access_token');
+                        base.deleteValue('baidu_access_token_bduss');
+                        base.deleteValue('baidu_access_token_uk');
+                        accessToken = '';
+                    } else if (currentUK && !storedUK) {
+                        base.setValue('baidu_access_token_uk', currentUK);
+                    } else if (currentBDUSS && !storedBDUSS) {
+                        base.setValue('baidu_access_token_bduss', currentBDUSS);
+                    }
+                }
+                if (!accessToken) accessToken = await this.getToken();
                 url = `${pan.pcs[0]}&fsids=${fidList}&access_token=${accessToken}`;
                 res = await base.get(url, {"User-Agent": pan.ua});
             }
@@ -938,21 +1002,49 @@
                 return;
             }
             if (res.errno === 0) {
-                let html = this.generateDom(res.list);
+                try {
+                    console.log('[网盘助手] filemetas 成功:', JSON.stringify({
+                        listLen: res.list ? res.list.length : -1,
+                        sample: res.list && res.list[0] ? {
+                            name: res.list[0].server_filename || res.list[0].filename,
+                            isdir: res.list[0].isdir,
+                            hasDlink: !!res.list[0].dlink
+                        } : null
+                    }));
+                } catch (e) {}
+                let files = (res.list || []).filter(v => +v.isdir !== 1);
+                if (!files.length) {
+                    // 带了文件 id 却返回空列表，多半是 token 已过期或属于其它账号，作废重授权再试一次
+                    if (fidList !== encodeURIComponent('[]') && maxRequestTime >= 1) {
+                        console.log('[网盘助手] 空列表但已携带文件id → 判定凭证错账号/过期，静默重新授权并重试');
+                        base.deleteValue('baidu_access_token');
+                        base.deleteValue('baidu_access_token_bduss');
+                        base.deleteValue('baidu_access_token_uk');
+                        await this.getToken();
+                        return this.getPCSLink(maxRequestTime - 1);
+                    }
+                    let msg = '所选内容未返回可下载的文件：请确认勾选的是【文件】而不是文件夹，然后刷新页面重试';
+                    if (fidList === encodeURIComponent('[]')) {
+                        msg = '所选内容中没有可下载的文件（文件夹不支持），请重新勾选文件';
+                    }
+                    console.log('[网盘助手] 重试后仍为空列表, fidList=', fidList);
+                    return message.error('提示：' + msg);
+                }
+                let html = this.generateDom(files);
                 this.showMainDialog(pan[mode][0], html, pan[mode][1]);
             } else if (res.errno === 112) {
                 return message.error('提示：页面过期，请刷新重试！');
-            } else if (res.errno === 9019) {
-                maxRequestTime--;
-                await this.getToken();
-                if (maxRequestTime > 0) {
-                    await this.getPCSLink(maxRequestTime);
+            } else {
+                // 非 0/112 的 errno 视为凭证失效，作废旧 token、重新授权并自动重试一次
+                console.log('[网盘助手] filemetas 失败, errno=', res.errno, '剩余重试=', maxRequestTime);
+                base.deleteValue('baidu_access_token');
+                base.deleteValue('baidu_access_token_bduss');
+                if (maxRequestTime >= 1) {
+                    await this.getToken();
+                    await this.getPCSLink(maxRequestTime - 1);
                 } else {
                     message.error('提示：获取下载链接失败！请刷新网页后重试！');
                 }
-            } else {
-                base.deleteValue('baidu_access_token');
-                message.error('提示：获取下载链接失败！请刷新网页后重试！');
             }
         },
         generateDom(list) {
@@ -964,6 +1056,11 @@
                 let filename = v.server_filename || v.filename;
                 let ext = base.getExtension(filename);
                 let size = base.sizeFormat(v.size);
+                // 单个文件没返回 dlink 时如实显示，不生成含 undefined 的伪链接
+                if (!v.dlink) {
+                    content += `<div class="pl-item"><div class="pl-item-name listener-tip">${filename}</div><span class="pl-item-link pl-a" style="color:#cc3235">该文件未返回下载链接（可能已失效或被禁止下载）</span></div>`;
+                    return;
+                }
                 let dlink = v.dlink + '&access_token=' + base.getValue('baidu_access_token');
                 if (mode === 'api') {
                     content += `<div class="pl-item">
@@ -1046,7 +1143,6 @@
                 dir: base.getValue('setting_rpc_dir'),
             };
             let BDUSS = this.getBDUSS();
-            if (!BDUSS) return 'assistant';
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
             let rpcData = {
                 id: new Date().getTime(),
@@ -1055,7 +1151,7 @@
                 params: [`token:${rpc.token}`, [link], {
                     dir: rpc.dir,
                     out: filename,
-                    header: [`User-Agent: ${pan.ua}`, `Cookie: BDUSS=${BDUSS}`]
+                    header: [`User-Agent: ${pan.ua}`, ...(BDUSS ? [`Cookie: BDUSS=${BDUSS}`] : [])]
                 }]
             };
             try {
@@ -1128,11 +1224,21 @@
             this.addButton();
             base.createTip();
             base.registerMenuCommand();
+            // 页面加载后后台预检账号，切换了就直接换 token
+            this.preflightAccount();
         },
         async initAuthorize() {
             let ins = setInterval(() => {
                 if (/openapi.baidu.com\/oauth\/2.0\/authorize/.test(location.href)) {
-                    let confirmButton = document.querySelector('#auth-allow');
+                    // 授权页按钮选择器可能有变化，做多级兜底
+                    let confirmButton =
+                        document.querySelector('#auth-allow') ||
+                        document.querySelector('#accept') ||
+                        document.querySelector('input[type="submit"]') ||
+                        Array.from(document.querySelectorAll('button, a, input[type="button"]')).find(el => {
+                            let t = (el.textContent || el.value || '').trim();
+                            return /^(授权|允许|同意|确认|Allow|Authorize)/i.test(t);
+                        });
                     if (confirmButton) {
                         confirmButton.click();
                         return;
@@ -1140,8 +1246,12 @@
                 }
                 if (/openapi.baidu.com\/oauth\/2.0\/login_success/.test(location.href)) {
                     if (location.href.includes('access_token')) {
-                        let token = location.href.match(/access_token=(.*?)&/)[1];
+                        let token = location.href.match(/access_token=([^&#]+)/)[1];
                         base.setValue('baidu_access_token', token);
+                        // 记下该 token 归属的账号
+                        this.getCurrentUK().then((uk) => {
+                            if (uk) base.setValue('baidu_access_token_uk', uk);
+                        });
                         window.close()
                     }
                 }
@@ -2972,3 +3082,4 @@
     };
     main.init();
 })();
+//（注：内容由AI生成）

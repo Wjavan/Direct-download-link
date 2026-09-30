@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name              FerryLink
 // @namespace         https://github.com/Wjavan/Direct-download-link
-// @version           1.2.0
+// @version           1.3.0
 // @author            Wjavan
-// @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持多种下载协议：HTTP/JSON-RPC/cURL。支持多种下载器：IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。
+// @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘（个人主页/文件夹）直链下载。支持 HTTP/JSON-RPC/cURL，推送至 IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。v1.3.0 起已移除分享页（他人分享链接）支持。
 // @description:en    Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.A fork of youxiaohou's Pan Download Helper. 
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*

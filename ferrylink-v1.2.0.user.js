@@ -1984,6 +1984,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
             doc.on('click', '.listener-open-setting', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                alert('[tianyi debug] handler fired');
+                console.log('[tianyi] settings clicked', e.target);
                 base.showSetting();
             });
         },

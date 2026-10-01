@@ -1973,25 +1973,36 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 container.appendChild($button[0]);
             }
             // Then scan the page for the actual upload button and move if found
-            setTimeout(() => this._relocateIfNeeded($button), 500);
+            this._waitForUpload($button);
         },
-        _relocateIfNeeded($button) {
-            // Find upload button in the page (not in nav-opea), use substring match
-            var uploadBtn = null;
-            document.querySelectorAll('button,a,[role=button]').forEach(function(el){
-                var t = (el.textContent||'').trim();
-                if (t.indexOf('上传')>=0 && !el.closest('.nav-opea')) {
-                    // Prefer exact or near-exact match first
-                    if (!uploadBtn || t.length < (uploadBtn.textContent||'').trim().length) {
-                        uploadBtn = el;
+        _waitForUpload($button) {
+            var found = false;
+            var check = () => {
+                if (found) return;
+                // Look for upload button outside nav-opea
+                var uploadBtn = null;
+                document.querySelectorAll('button,a,[role=button]').forEach(function(el){
+                    var t = (el.textContent||'').trim();
+                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea')) {
+                        if (!uploadBtn || t.length < (uploadBtn.textContent||'').trim().length) {
+                            uploadBtn = el;
+                        }
                     }
+                });
+                if (uploadBtn) {
+                    found = true;
+                    var parent = uploadBtn.parentElement;
+                    if (parent) {
+                        parent.insertBefore($button[0], uploadBtn);
+                        console.log('[tianyi] relocated before:', uploadBtn.tagName, uploadBtn.className.slice(0,30), '|', t.slice(0,15));
+                    }
+                    return;
                 }
-            });
-            if (!uploadBtn) return;
-            var parent = uploadBtn.parentElement;
-            if (!parent) return;
-            parent.insertBefore($button[0], uploadBtn);
-            console.log('[tianyi] relocated before:', uploadBtn.tagName, uploadBtn.className.slice(0,30), '|', (uploadBtn.textContent||'').trim().slice(0,15));
+                // Retry up to 3s
+                setTimeout(check, 200);
+            };
+            check();
+            setTimeout(() => { if (!found) console.log('[tianyi] upload btn not found after 3s, keeping fallback position'); }, 3000);
         },
         addButton() {
             if (!pt) return;

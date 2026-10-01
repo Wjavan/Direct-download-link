@@ -571,20 +571,9 @@
                                                     showCloseButton: true,
                                                     showConfirmButton: false,
                                                     footer: "",
-                                                    target: document.body,
-                                                    customClass: {
-                                                        container: 'ferrylink-swal-container',
-                                                        popup: 'ferrylink-swal-popup'
-                                                    },
-                                                    didOpen: () => {
-                                                        // Force max z-index using Swal's own methods
-                                                        const container = Swal.getContainer();
-                                                        const popup = Swal.getPopup();
-                                                        if (container) container.style.setProperty('z-index', '2147483647', 'important');
-                                                        if (popup) popup.style.setProperty('z-index', '2147483647', 'important');
-                                                    },
                                                 }).then(() => {
                                                                             message.success('设置成功！');
+                                                                            history.go(0);
                                                                         }).catch(err => {
                                                                             console.error('[showSetting] Swal.fire error:', err);
                                                                         });

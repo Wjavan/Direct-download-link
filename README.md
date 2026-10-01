@@ -1,4 +1,4 @@
-# 🚀 网盘直链下载助手
+# 🚀 FerryLink
 
 > 免费开源 · 六大网盘 · 多种下载协议 · 支持 IDM/Aria2/Motrix
 

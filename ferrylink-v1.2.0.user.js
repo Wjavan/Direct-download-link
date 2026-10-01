@@ -1979,7 +1979,16 @@ base.iframeDownload(e.currentTarget.dataset.link);
             var found = false;
             var check = () => {
                 if (found) return;
-                // Look for upload button outside nav-opea
+                // Debug: log all buttons outside nav-opea
+                var btns = [];
+                document.querySelectorAll('button,a,[role=button]').forEach(function(el){
+                    if (!el.closest('.nav-opea')) {
+                        var t = (el.textContent||'').trim().split(/\s+/).slice(0,3).join(' ');
+                        if (t && t.length < 30) btns.push(el.tagName + ' ' + String(el.className).slice(0,30) + ' | ' + t);
+                    }
+                });
+                console.log('[tianyi] buttons outside nav-opea:', btns.slice(0,20).join('; '));
+                // Look for upload button
                 var uploadBtn = null;
                 document.querySelectorAll('button,a,[role=button]').forEach(function(el){
                     var t = (el.textContent||'').trim();

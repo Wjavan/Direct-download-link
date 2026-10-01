@@ -116,7 +116,6 @@ aria2c --enable-rpc --rpc-listen-all --rpc-listen-port=6800 --rpc-secret=YOUR_SE
 | `GM_registerMenuCommand` | 右键菜单「设置」入口 |
 | `GM_cookie` | 读取百度 `BDUSS`（仅百度需要） |
 | `GM_openInTab` | 百度令牌授权时打开授权窗口 |
-| `GM_openInTab` | 百度令牌获取时打开授权页 |
 | `window.close` | 百度 OAuth 授权完成后关闭授权窗口 |
 
 ---

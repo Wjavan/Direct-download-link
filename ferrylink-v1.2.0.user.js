@@ -2030,21 +2030,15 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 });
                 if (uploadBtn) {
                     found = true;
-                    // Find the action bar container: .FileHead_file-head-upload holds 上传 dropdown
-                    var el = uploadBtn.parentElement;
-                    while (el) {
-                        var cls = String(el.className || '');
-                        if (cls.indexOf('file-head-upload') >= 0 || cls.indexOf('web-right') >= 0 || cls.indexOf('FileHead_file-head-left') >= 0) {
-                            // Insert as first child (before 上传 button)
-                            if (el.firstChild) {
-                                el.insertBefore($button[0], el.firstChild);
-                            } else {
-                                el.appendChild($button[0]);
-                            }
-                            console.log('[tianyi] inserted into', el.tagName, el.className.slice(0,40));
-                            return;
-                        }
-                        el = el.parentElement;
+                    // Directly find the upload container by class name pattern
+                    var uploadContainer = null;
+                    document.querySelectorAll('[class*="FileHead_file-head-upload"]').forEach(function(el){
+                        uploadContainer = el;
+                    });
+                    if (uploadContainer && uploadContainer.firstChild) {
+                        uploadContainer.insertBefore($button[0], uploadContainer.firstChild);
+                        console.log('[tianyi] inserted into upload container:', uploadContainer.className.slice(0,40));
+                        return;
                     }
                     // Fallback: insert before uploadBtn
                     if (uploadBtn.parentElement) {

@@ -571,9 +571,19 @@
                                                     showCloseButton: true,
                                                     showConfirmButton: false,
                                                     footer: "",
+                                                    target: document.body,
+                                                    customClass: {
+                                                        container: 'ferrylink-swal-container',
+                                                        popup: 'ferrylink-swal-popup'
+                                                    },
+                                                    didOpen: () => {
+                                                        const container = Swal.getContainer();
+                                                        const popup = Swal.getPopup();
+                                                        if (container) container.style.setProperty('z-index', '2147483647', 'important');
+                                                        if (popup) popup.style.setProperty('z-index', '2147483647', 'important');
+                                                    },
                                                 }).then(() => {
                                                                             message.success('设置成功！');
-                                                                            history.go(0);
                                                                         }).catch(err => {
                                                                             console.error('[showSetting] Swal.fire error:', err);
                                                                         });
@@ -938,7 +948,9 @@
             .pl-loading { width: 16px; height: 16px; display: inline-block; overflow: hidden; background: none; }
             .pl-loading-box { width: 100%; height: 100%; position: relative; transform: translateZ(0) scale(0.16); backface-visibility: hidden; transform-origin: 0 0; }
             .pl-loading-box div { box-sizing: content-box; }
-            .swal2-container { z-index: 100000 !important; }
+            .swal2-container { z-index: 200000 !important; }
+            .ferrylink-swal-container { z-index: 2147483647 !important; }
+            .ferrylink-swal-popup { z-index: 2147483647 !important; }
             body.swal2-height-auto { height: inherit !important; }
             .pl-ico { flex: 0 0 auto; width: 14px; height: 14px; margin-right: 5px; vertical-align: -2px; pointer-events: none; }
             .pl-btn-primary.is-loading, .pl-item-btn.is-loading, button.pl-item-btn.is-loading {

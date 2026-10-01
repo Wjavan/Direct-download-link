@@ -1967,17 +1967,21 @@ base.iframeDownload(e.currentTarget.dataset.link);
         },
         _insertBeforeUpload(container, $button) {
             let uploadBtn = null;
-            let candidates = container.querySelectorAll('a, button, div, span, em, i');
+            // ponytail: use substring match instead of === because tianyi's upload button
+            // text may include icon text or other descendants, so exact match fails and we
+            // fall back to container.firstChild (wrong position, next to 开通会员).
+            let candidates = container.querySelectorAll('a, button, span, em, i');
             for (let el of candidates) {
                 let text = (el.innerText || el.textContent || '').trim();
-                if (text === '上传' || text === '上传文件' || text === '上传文件夹') {
+                if (text.includes('上传')) {
                     uploadBtn = el;
                     break;
                 }
             }
             if (uploadBtn) {
-                let clickable = uploadBtn.closest && (uploadBtn.closest('button, a, [class*="btn"], [class*="button"]') || uploadBtn);
-                container.insertBefore($button[0], clickable);
+                // find the closest clickable ancestor to use as insertion point
+                let target = uploadBtn.closest && (uploadBtn.closest('a, button, [class*="btn"], [class*="button"]') || uploadBtn);
+                container.insertBefore($button[0], target);
             } else {
                 container.insertBefore($button[0], container.firstChild);
             }

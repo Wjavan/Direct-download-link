@@ -584,6 +584,7 @@
                                                     },
                                                 }).then(() => {
                                                                             message.success('设置成功！');
+                                                                            history.go(0);
                                                                         }).catch(err => {
                                                                             console.error('[showSetting] Swal.fire error:', err);
                                                                         });

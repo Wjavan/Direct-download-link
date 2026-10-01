@@ -133,35 +133,62 @@
         deleteValue(name) {
             GM_deleteValue(name);
         },
-        // ponytail: tokens used to live in localStorage, which any script on the drive
-        // origin can read. GM storage lives in the extension sandbox, so an XSS on the
-        // page can no longer lift the access token.
+        // ponytail: alipan keeps rotating its own localStorage token (new access_token +
+        // refresh_token whenever it feels like it). An earlier version snapshotted that into GM
+        // storage once and deleted the page copy, so the script kept replaying a stale
+        // access_token and ali answered "not login" while the page itself stayed logged in.
+        // Read the live value every time and only fall back to the GM copy when storage is
+        // unavailable (GM-only environments). Nothing is written back or removed.
         getStorage(key) {
-            let v = GM_getValue(key, null);
-            if (v === null || v === undefined) {
-                // ponytail: tokens written before the GM-storage move still sit in
-                // localStorage, so the first read after upgrading sees "Token过期".
-                // Migrate once, then GM storage is the only source of truth.
-                try {
-                    const legacy = localStorage.getItem(key);
-                    if (legacy !== null) {
-                        v = legacy;
-                        GM_setValue(key, legacy);
-                        localStorage.removeItem(key);
-                    }
-                } catch (e) { /* storage unavailable */ }
-            }
+            let v = null;
+            try {
+                v = localStorage.getItem(key);
+            } catch (e) { /* storage unavailable */ }
+            if (v === null || v === undefined) v = GM_getValue(key, null);
             try {
                 return JSON.parse(v);
             } catch (e) {
                 return v;
             }
         },
-        setStorage(key, value) {
-            if (this.isType(value) === 'object' || this.isType(value) === 'array') {
-                return GM_setValue(key, JSON.stringify(value));
+        // ponytail: ali access tokens are short-lived. When the stored one is at/past its
+        // expiry, trade refresh_token for a fresh pair and write the result back to
+        // localStorage (where ali's own code reads it) plus GM storage as a fallback.
+        // Idempotent and failure-tolerant: on any error the caller keeps using the old token.
+        async refreshAliToken(tk) {
+            if (!tk || !tk.refresh_token) return tk;
+            const now = Date.now();
+            const exp = tk.expire_time ? Date.parse(tk.expire_time) : 0;
+            // refresh a minute early rather than racing the expiry
+            if (!exp || exp - now > 60000) return tk;
+            try {
+                const res = await base.post(
+                    'https://api.aliyundrive.com/v2/account/token',
+                    { grant_type: 'refresh_token', refresh_token: tk.refresh_token },
+                    { 'content-type': 'application/json;charset=utf-8' }
+                );
+                const merged = Object.assign({}, tk, {
+                    access_token: res.access_token,
+                    refresh_token: res.refresh_token || tk.refresh_token,
+                    token_type: res.token_type || tk.token_type || 'Bearer',
+                    expire_time: new Date(now + (res.expire_time ? Date.parse(res.expire_time) : now + 7200000)).toISOString(),
+                });
+                base.setStorage('token', merged);
+                return merged;
+            } catch (e) {
+                return tk;
             }
-            return GM_setValue(key, value);
+        },
+        setStorage(key, value) {
+            // ponytail: alipan reads its own token straight out of localStorage, so a refreshed
+            // token written only to GM storage would be ignored on the next read (getStorage
+            // prefers localStorage). Write both; the two hold the same JSON.
+            let payload = value;
+            if (this.isType(value) === 'object' || this.isType(value) === 'array') {
+                payload = JSON.stringify(value);
+            }
+            try { localStorage.setItem(key, payload); } catch (e) { /* storage unavailable */ }
+            return GM_setValue(key, payload);
         },
         // ponytail: one-shot upgrade step. Idempotent (guarded by a version marker), never
         // throws (wrapped), and a failure just means we retry next load rather than blocking
@@ -1631,6 +1658,7 @@
         async getRealLink(d, f) {
                     try {
                         let tk = base.getStorage('token');
+                        tk = await base.refreshAliToken(tk);
                         if (!tk || !tk.access_token) {
                             Swal.close();
                             return message.error('提示：Token过期或缺失，请刷新网页后重试！');
@@ -1694,6 +1722,7 @@
                         Swal.close(); return message.error('提示：请打开文件夹后勾选文件！');
                     }
                 let tk = base.getStorage('token');
+                tk = await base.refreshAliToken(tk);
                 if (!tk || !tk.access_token) {
                     Swal.close(); return message.error('提示：请先登录阿里云盘后再下载！');
                 }

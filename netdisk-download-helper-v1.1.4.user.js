@@ -630,6 +630,10 @@
                 message.error('提示：下载链接无效！');
                 return false;
             }
+            // ponytail: create it here, not at each adapter's addButton — a missing iframe makes
+            // the next line a no-op on an empty jQuery set, and the click fails silently. baidu
+            // hit exactly that when it switched off GM_xmlhttpRequest.
+            this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
             return true;
         },
@@ -1446,7 +1450,6 @@
                     fallbacks.forEach(sel => base.listenElement(sel, tryInject));
                 }
             }
-            base.createDownloadIframe();
             this.addPageListener();
         },
         async getPCSLink() {
@@ -1775,7 +1778,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     }
                 })
             }
-            base.createDownloadIframe();
             this.addPageListener();
         },
         async getToken() {
@@ -2093,7 +2095,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     }
                 });
             }
-            base.createDownloadIframe();
             this.addPageListener();
         },
         _smartListen(callback) {
@@ -2708,7 +2709,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
             this.addButton();
             this.addPageListener();
             base.createTip();
-            base.createDownloadIframe();
             base.registerMenuCommand();
         }
     };
@@ -2781,7 +2781,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     $('.pl-button').length === 0 && $toolWrap.prepend($button);
                 })
             }
-            base.createDownloadIframe();
             this.addPageListener();
         },
         async getFileUrlByOnce(item, index) {

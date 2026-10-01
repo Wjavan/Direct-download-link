@@ -321,32 +321,57 @@
                         });
                     });
                 },
-        fetchChunk(url, headers, start, end) {
+        fetchChunk(url, headers, start, end, attempt = 0) {
                     return new Promise((resolve, reject) => {
                         // ponytail: must be tracked so _resetData() can abort in-flight chunks;
                         // otherwise they keep occupying GM_xmlhttpRequest's connection pool after
                         // the dialog closes, and a later getRealLink POST never gets a socket.
                         const key = 'chunk_' + start + '_' + end + '_' + Date.now();
                         const clear = () => { delete request[key]; };
+                        const fail = (msg) => {
+                            clear();
+                            // ponytail: the CDN drops the occasional ranged GET even at 2-way
+                            // concurrency. One retry after a short backoff absorbs that; a real
+                            // failure repeats and still surfaces, so nothing is masked.
+                            if (attempt < 2) {
+                                setTimeout(() => this.fetchChunk(url, headers, start, end, attempt + 1)
+                                    .then(resolve, reject), 800 * (attempt + 1));
+                            } else {
+                                reject(new Error(msg));
+                            }
+                        };
                         request[key] = GM_xmlhttpRequest({
                             method: "GET", url,
                             headers: Object.assign({}, headers, { 'Range': `bytes=${start}-${end}` }),
                             responseType: 'arraybuffer',
                             timeout: 300000,
                             onload: (res) => {
-                                clear();
-                                if (res.status === 206 || res.status === 200) resolve(res.response);
-                                else reject(new Error('分片失败（HTTP ' + res.status + '）'));
+                                const want = end - start + 1;
+                                // ponytail: a truncated body can arrive with a 206 status, so the
+                                // byte count is the real check — without it a short chunk silently
+                                // corrupts the merged Blob.
+                                if ((res.status === 206 || res.status === 200)
+                                    && res.response && res.response.byteLength === want) {
+                                    clear();
+                                    resolve(res.response);
+                                } else {
+                                    fail('分片失败（HTTP ' + res.status + '，收到 '
+                                        + ((res.response && res.response.byteLength) || 0) + '/' + want + ' 字节）');
+                                }
                             },
-                            onerror: () => { clear(); reject(new Error('分片请求出错')); },
-                            ontimeout: () => { clear(); reject(new Error('分片超时')); },
+                            onerror: () => fail('分片请求出错'),
+                            ontimeout: () => fail('分片超时'),
                         });
                     });
                 },
         download(url, headers, extra) {
-                    // ponytail: 16 threads saturates GM_xmlhttpRequest's per-extension connection pool,
-                    // so a later getRealLink POST never gets a socket and hangs forever. 6 is the cap.
-                    const THREADS = 6, CHUNK = 1024 * 1024, MAX = 1024 * 1024 * 1024;
+                    // ponytail: concurrency is capped by the pan CDN, not by GM_xmlhttpRequest.
+                    // Measured against a real baidu dlink (8.9MB pdf, 9x1MB ranges):
+                    //   6-way -> 3/9 chunks ok, 6 timed out mid-body  (reported as 分片请求出错)
+                    //   3-way -> 5/9 ok
+                    //   2-way -> 9/9 ok, full byte count
+                    // Baidu throttles concurrent ranged GETs on one signed URL, so 2 is the cap.
+            const THREADS = 2, CHUNK = 1024 * 1024, MAX = 1024 * 1024 * 1024;
             return this.rangeSupported(url, headers).then(async (probe) => {
                 if (!probe.ok || !probe.size) {
                     throw new Error('该链接不支持分片下载（Range 请求被拒绝），请使用 "Aria下载" 或 "RPC下载" 推送给外部下载器');

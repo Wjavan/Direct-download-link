@@ -822,6 +822,18 @@
             $div.append($iframe);
             $('body').append($div);
         },
+        // ponytail: all five adapters download an api link the same way — hand the URL to the
+        // hidden iframe and let the browser or IDM fetch it. Four of them did that inline with no
+        // validation; only ali checked the scheme, so a bad dlink navigated the iframe elsewhere
+        // and only one adapter reported it. One guarded call site beats five unchecked copies.
+        iframeDownload(link) {
+            if (!/^https?:\/\//i.test(link)) {
+                message.error('提示：下载链接无效！');
+                return false;
+            }
+            $('#downloadIframe').attr('src', link);
+            return true;
+        },
         getMirrorList(link, mirror, thread = 2) {
             let host = new URL(link).host;
             let mirrors = [];
@@ -1614,17 +1626,9 @@
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                let href = e.currentTarget.dataset.link;
-                if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                // ponytail: no base.download() here — it opens with a Range probe and throws
-                // '该链接不支持分片下载' when the CDN refuses. The hidden iframe lets the browser
-                // (or IDM, via its extension) fetch the URL directly.
-                let iframe = document.getElementById('downloadIframe');
-                if (iframe) iframe.src = href;
-                else $('#downloadIframe').attr('src', href);
-                message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
+                base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
@@ -1979,7 +1983,7 @@
                     });
             doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
@@ -2289,11 +2293,11 @@
                     });
             doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-link-media', async (e) => {
                 e.preventDefault();
-                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+base.iframeDownload(e.currentTarget.dataset.link);
                 $(e.currentTarget).text('已触发下载，若未弹出请检查浏览器下载设置').animate({opacity: '0.5'}, "slow");
             });
             doc.on('click', '.listener-link-api-btn', async (e) => {
@@ -2743,7 +2747,7 @@
                         });
             doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
@@ -3004,7 +3008,7 @@
                     });
             doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();

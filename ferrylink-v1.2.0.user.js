@@ -578,10 +578,10 @@
                                                         container: 'ferrylink-swal-container',
                                                         popup: 'ferrylink-swal-popup'
                                                     },
-                                                    willOpen: () => {
-                                                        // Force max z-index on both container and popup
-                                                        const container = document.querySelector('.swal2-container.ferrylink-swal-container') || document.querySelector('.swal2-container');
-                                                        const popup = document.querySelector('.swal2-popup.ferrylink-swal-popup') || document.querySelector('.swal2-popup');
+                                                    didOpen: () => {
+                                                        // Force max z-index using Swal's own methods
+                                                        const container = Swal.getContainer();
+                                                        const popup = Swal.getPopup();
                                                         if (container) container.style.setProperty('z-index', '2147483647', 'important');
                                                         if (popup) popup.style.setProperty('z-index', '2147483647', 'important');
                                                     },

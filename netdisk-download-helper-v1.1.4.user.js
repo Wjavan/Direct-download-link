@@ -1553,9 +1553,11 @@
     };
     let ali = {
         convertLinkToAria(link, filename, ua) {
-            filename = base.fixFilename(filename);
-            return encodeURIComponent(`aria2c "${link}" --out "${filename}" -x 16 -s 16 -k 1M --header "Referer: https://www.aliyundrive.com/"`);
-        },
+                    filename = base.fixFilename(filename);
+                    // ponytail: ali's CDN 403s without a browser User-Agent, so aria2 needs the header
+                    // too — otherwise the generated command fails where the in-script download now works.
+                    return encodeURIComponent(`aria2c "${link}" --out "${filename}" -x 16 -s 16 -k 1M --header "Referer: https://www.aliyundrive.com/" --header "User-Agent: ${ua || navigator.userAgent}"`);
+                },
         convertLinkToBC(link, filename, ua) {
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&refer=${encodeURIComponent('https://www.aliyundrive.com/')}ZZ`;
             return encodeURIComponent(`bc://http/${base.e(bc)}`);
@@ -1563,7 +1565,8 @@
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
-            return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/"`);
+            // ponytail: -A is curl's User-Agent flag; ali's CDN 403s without it.
+            return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/" -A "${ua || navigator.userAgent}"`);
         },
         addPageListener() {
             // ponytail: ali's api row was rebuilt to match baidu's byte-for-byte (pl-item-tip +
@@ -1661,10 +1664,10 @@
                     $item.find('.pl-item-tip').hide();
                         $progress.show();
                     $item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
-                    // ali's config has no ua, so send the Referer its CDN checks instead of
-                    // baidu's User-Agent. download() chunks when the CDN allows Range and falls
-                    // back to a single stream when it does not, so this works either way.
-                    base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
+                    // ali's CDN 403s requests without a browser User-Agent — it treats a bare GM request as
+                                        // bot traffic. LinkSwift's standHeaders() sends navigator.userAgent on every
+                                        // request for the same reason. Referer alone got us 'HTTP 403'.
+                                        base.download(href, {"Referer": location.origin + '/', "User-Agent": navigator.userAgent}, {filename, index}).catch((err) => {
                         clearInterval(ins[index]);
                         $item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
                         $item.find('.pl-progress-inner').css('width', '0%');
@@ -1927,18 +1930,23 @@
                 return 'fail';
             }
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
-            let rpcData = {
-                id: new Date().getTime(),
-                jsonrpc: '2.0',
-                method: 'aria2.addUri',
-                params: [`token:${rpc.token}`, [link], {
-                    dir: rpc.dir,
-                    out: base.safeRpcFilename(filename),
-                    header: [`Referer: https://www.aliyundrive.com/`]
-                }]
-            };
-            try {
-                let res = await base.post(url, rpcData, {"Referer": "https://www.aliyundrive.com/"}, '');
+                        // ponytail: ali's CDN 403s any request without a browser User-Agent — it reads as bot
+                        // traffic. Without this header aria2 gets 403 and the task silently stalls, and RPC is
+                        // otherwise the fastest path available. navigator.userAgent is the same value
+                        // LinkSwift sends via standHeaders().
+                        const UA = navigator.userAgent;
+                        let rpcData = {
+                            id: new Date().getTime(),
+                            jsonrpc: '2.0',
+                            method: 'aria2.addUri',
+                            params: [`token:${rpc.token}`, [link], {
+                                dir: rpc.dir,
+                                out: base.safeRpcFilename(filename),
+                                header: [`Referer: https://www.aliyundrive.com/`, `User-Agent: ${UA}`]
+                            }]
+                        };
+                        try {
+                            let res = await base.post(url, rpcData, {"Referer": "https://www.aliyundrive.com/"}, '');
                 if (res.result) return 'success';
                 // ponytail: aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".

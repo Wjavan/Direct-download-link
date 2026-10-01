@@ -706,6 +706,10 @@
                 --pl-shadow-pop: 0 1px 1px rgba(28, 28, 32 / 5%), 0 8px 24px rgba(28, 28, 32 / 12%);
                 --pl-dur: 180ms;
                 --pl-ease: cubic-bezier(.4, 0, .2, 1);
+                /* ponytail: --pl-z-dialog is a token like the rest, but the VALUE is unchanged from
+                   the pre-token rule (100000) — raising it would put the dialog above the
+                   dependency-failure banner (2147483647 is the ceiling) with nothing to gain. */
+                --pl-z-dialog: 100000;
                 --pl-z-tip: 110000;
             }
             body::-webkit-scrollbar { display: none }
@@ -808,6 +812,14 @@
             .pl-loading { width: 16px; height: 16px; display: inline-block; overflow: hidden; background: none; }
             .pl-loading-box { width: 100%; height: 100%; position: relative; transform: translateZ(0) scale(0.16); backface-visibility: hidden; transform-origin: 0 0; }
             .pl-loading-box div { box-sizing: content-box; }
+            /* ponytail: these two are not cosmetic — they keep the pan page from covering our
+               dialog. .swal2-container forces the swal layer above the host's own high z-index
+               toolbars (baidu's sits far above sweetalert2's default 1060, so without this its
+               buttons paint on top of the popup). body.swal2-height-auto stops swal from setting
+               an inline height on <body>, which would jump the pan layout while the dialog is
+               open. Both were accidentally dropped in the token rewrite; do not remove them. */
+            .swal2-container { z-index: var(--pl-z-dialog) !important; }
+            body.swal2-height-auto { height: inherit !important; }
             /* ponytail: reduced-motion is honoured by dropping the pulsing hint animation and the
                menu's slide-free transitions, not by rewriting the markup that triggers them. */
             @media (prefers-reduced-motion: reduce) {

@@ -1539,44 +1539,10 @@
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
-            doc.on('click', '.listener-link-api.browser', async (e) => {
+            doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                let dataset = e.currentTarget.dataset;
-                let href = dataset.link;
-                if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                // ponytail: no resolution probe before the dialog. The old HEAD+ranged-GET
-                // stalled every click for up to 20s; the iframe follows the redirect itself,
-                // so 直接下载 starts immediately and only 复制链接 resolves lazily.
-                Swal.fire({
-                    title: '下载链接',
-                    input: 'text',
-                    inputValue: href,
-                    inputAttributes: { readonly: true, onclick: 'this.select()' },
-                    showConfirmButton: true,
-                    confirmButtonText: '复制链接',
-                    showCancelButton: true,
-                    cancelButtonText: '直接下载',
-                    showCloseButton: true,
-                    position: 'top',
-                    width: 800,
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        let out = href;
-                        toast.fire({ title: '正在解析下载地址...', timer: null });
-                        try {
-                            const finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
-                            if (finalUrl) out = finalUrl;
-                        } catch (e) { /* best-effort */ }
-                        Swal.close();
-                        base.setClipboard(out);
-                        message.success('链接已复制到剪贴板');
-                    } else if (result.dismiss === 'cancel') {
-                        let iframe = document.getElementById('downloadIframe');
-                        if (iframe) iframe.src = href;
-                        else $('#downloadIframe').attr('src', href);
-                    }
-                });
-            });
+                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
+
             doc.on('click', '.listener-link-api.blob', async (e) => {
                             e.preventDefault();
                             let dataset = e.currentTarget.dataset;
@@ -1626,6 +1592,7 @@
                         }, 2500);
                     }
                 }, 500);
+            });
             });
             doc.on('click', '.listener-link-api-btn', async (e) => {
                 base.setClipboard(e.target.dataset.filename);
@@ -1781,7 +1748,7 @@
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                 <div class="pl-item-progress" style="display: none">

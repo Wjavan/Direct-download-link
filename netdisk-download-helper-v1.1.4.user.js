@@ -1641,64 +1641,73 @@
             });
             // 增强下载 = 脚本跨域请求（多线程分片，不支持时降级为单流），带进度条。
                         // 直接下载 = 浏览器 iframe 访问链接。二者是 LinkSwift 的原始分工。
-            // 增强下载 opens its own dialog: same rows as the API dialog minus 直接下载, because
-            // the user already picked the cross-origin path. Clicking 增强下载 *inside* that
-            // dialog is what actually starts the download.
+                        // 增强下载 opens its own dialog (same rows minus 直接下载) and starts downloading
+            // immediately — a second click inside that dialog would be busywork. The per-file
+            // runner is shared because auto-start has no click event to hang _factory() off.
             doc.on('click', '.listener-link-api.blob', async (e) => {
                 e.preventDefault();
+                const runOne = (item, link) => {
+                    const $item = $(item);
+                        const $progress = $item.find('.pl-item-progress');
+                    const filename = link.dataset.filename;
+                    const href = link.dataset.link;
+                    const index = link.dataset.index;
+                    if (!href) {
+                        message.error('提示：未获取到下载链接，请刷新页面后重试！');
+                        return;
+                    }
+                    _reset(index);
+                    $item.find('.pl-item-link').hide();
+                    $item.find('.pl-item-tip').hide();
+                        $progress.show();
+                    $item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
+                    // ali's config has no ua, so send the Referer its CDN checks instead of
+                    // baidu's User-Agent. download() chunks when the CDN allows Range and falls
+                    // back to a single stream when it does not, so this works either way.
+                    base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
+                        clearInterval(ins[index]);
+                        $item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
+                        $item.find('.pl-progress-inner').css('width', '0%');
+                        $item.find('.pl-progress-inner-text').text('0%');
+                        // ponytail: capture the timer this failure belongs to — a user can click again
+                        // before it fires, and an uncaptured restore would stomp the new download's UI.
+                        const failed = ins[index];
+                        setTimeout(() => {
+                            if (ins[index] === failed) {
+                                $progress.hide();
+                                $item.find('.pl-item-link').show();
+                            }
+                        }, 3000);
+                    });
+                    ins[index] = setInterval(() => {
+                        const prog = +progress[index] || 0;
+                        $item.find('.pl-progress-inner').css('width', prog + '%');
+                        $item.find('.pl-progress-inner-text').text(prog + '%');
+                        if (prog >= 100) {
+                            clearInterval(ins[index]);
+                            $item.find('.pl-progress-tip').text('下载完成，已弹出保存框！');
+                                                    setTimeout(() => {
+                                                        $progress.hide();
+                                                        $item.find('.pl-item-link').show();
+                                                    }, 2500);
+                        }
+                    }, 500);
+                };
                 if (!enhanceView) {
                     enhanceView = true;
                     Swal.close();
                     this.showMainDialog('增强下载（脚本跨域请求）', this.generateDom(selectList), pan.api[1]);
+                    // start after the dialog is in the DOM, and staggered so opening N rows does
+                    // not fire N downloads in the same tick (the pan CDN throttles concurrency).
+                    const rows = [...document.querySelectorAll('.pl-item')];
+                    rows.forEach((row, i) => {
+                        const link = row.querySelector('.listener-link-api.blob');
+                        if (link) setTimeout(() => runOne(row, link), i * 300);
+                    });
                     return;
                 }
-                let o = _factory(e);
-                let href = e.currentTarget.dataset.link;
-                let filename = e.currentTarget.dataset.filename;
-                let index = e.currentTarget.dataset.index;
-                // getPCSLink already resolved download_url into data-link; re-requesting it here
-                // hung GM_xmlhttpRequest, so trust data-link.
-                if (!href) {
-                    return message.error('提示：未获取到下载链接，请刷新页面后重试！');
-                }
-                _reset(index);
-                // ponytail: _factory's .link is item.find('.pl-item-link'), which matches every
-                // button in the row — hide only the clicked one and restore them all on exit.
-                $(e.currentTarget).hide();
-                o.tip.hide();
-                o.progress.show();
-                o.item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
-                // ali's config has no ua, so send the Referer its CDN checks instead of baidu's
-                // User-Agent. download() chunks when the CDN allows Range and falls back to a
-                // single stream when it does not, so this works either way.
-                base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
-                    clearInterval(ins[index]);
-                    o.item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
-                    o.item.find('.pl-progress-inner').css('width', '0%');
-                    o.item.find('.pl-progress-inner-text').text('0%');
-                    // ponytail: capture the timer this failure belongs to — a user can click again
-                    // before it fires, and an uncaptured restore would stomp the new download's UI.
-                    const failed = ins[index];
-                    setTimeout(() => {
-                        if (ins[index] === failed) {
-                            o.progress.hide();
-                            o.item.find('.pl-item-link').show();
-                        }
-                    }, 3000);
-                });
-                ins[index] = setInterval(() => {
-                    let prog = +progress[index] || 0;
-                    o.item.find('.pl-progress-inner').css('width', prog + '%');
-                    o.item.find('.pl-progress-inner-text').text(prog + '%');
-                    if (prog >= 100) {
-                        clearInterval(ins[index]);
-                        o.item.find('.pl-progress-tip').text('下载完成，已弹出保存框！');
-                        setTimeout(() => {
-                            o.progress.hide();
-                            o.item.find('.pl-item-link').show();
-                        }, 2500);
-                    }
-                }, 500);
+                const o = _factory(e);
+                runOne(o.item[0], e.currentTarget);
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();

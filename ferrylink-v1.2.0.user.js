@@ -855,7 +855,7 @@
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
-            .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
+            .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; height: 32px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
             .pl-item-btn:hover { opacity: 0.9; }
             .pl-item-btn:active { filter: brightness(.9); }
             .pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }

@@ -1966,14 +1966,30 @@ base.iframeDownload(e.currentTarget.dataset.link);
             });
         },
         _insertBeforeUpload(container, $button) {
-            // Insert before the first child in nav-opea (e.g. 开通会员),
-            // since the upload button lives elsewhere in the page layout
-            // and is not a sibling of nav-opea children.
+            // First, insert before firstChild as fallback
             if (container.firstChild) {
                 container.insertBefore($button[0], container.firstChild);
             } else {
                 container.appendChild($button[0]);
             }
+            // Then scan the page for the actual upload button and move if found
+            setTimeout(() => this._relocateIfNeeded($button), 500);
+        },
+        _relocateIfNeeded($button) {
+            // Find upload button in the page (not in nav-opea)
+            var uploadBtn = null;
+            document.querySelectorAll('button,a,[role=button]').forEach(function(el){
+                var t = (el.textContent||'').trim();
+                if ((t === '上传' || t === '上传文件') && !el.closest('.nav-opea')) {
+                    uploadBtn = el;
+                }
+            });
+            if (!uploadBtn) return;
+            var parent = uploadBtn.parentElement;
+            if (!parent) return;
+            // Move button before upload button's parent
+            parent.insertBefore($button[0], uploadBtn);
+            console.log('[tianyi] relocated before upload button:', uploadBtn.tagName, uploadBtn.className.slice(0,30));
         },
         addButton() {
             if (!pt) return;

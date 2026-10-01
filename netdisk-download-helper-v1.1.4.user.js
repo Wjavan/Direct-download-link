@@ -64,10 +64,7 @@
         }));
         return;
     }
-    // ponytail: one width for every adapter — all six showMainDialog bodies are identical and
-    // read this. 800 was roomy enough to leave short filenames floating in whitespace; 620 fits
-    // the long aliyundrive signed URLs and the filename column without pushing the popup wide.
-    let pt = '', selectList = [], params = {}, mode = '', width = 620, pan = {}, color = '',
+    let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
     let watched = {};
     const customClass = {
@@ -699,9 +696,6 @@
                 showCloseButton: true,
                 showConfirmButton: false,
                 footer: "",
-                position: 'top',
-                width,
-                customClass,
             }).then(() => {
                 message.success('设置成功！');
                 history.go(0);
@@ -809,7 +803,7 @@
             .pl-main { max-height: 400px;overflow-y:scroll; }
             .pl-footer {font-size: 12px!important;justify-content: flex-start!important; margin: 10px 0 0!important; padding: 5px 0 0!important; color: #f56c6c!important; }
             .pl-item { display: flex; align-items: center; line-height: 22px; }
-            .pl-item-name { flex: 0 0 130px; text-align: left;margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor:default; }
+            .pl-item-name { flex: 0 0 150px; text-align: left;margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor:default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis;cursor:pointer }
             .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 3px; line-height: 1; cursor: pointer; color: #fff; }
             .pl-item-tip { display: flex; justify-content: space-between;flex: 1; }
@@ -1564,8 +1558,7 @@
                     cancelButtonText: '直接下载',
                     showCloseButton: true,
                     position: 'top',
-                    width,
-                    customClass,
+                    width: 800,
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         let out = href;

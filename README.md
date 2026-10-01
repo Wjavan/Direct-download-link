@@ -95,6 +95,7 @@ aria2c --enable-rpc --rpc-listen-all --rpc-listen-port=6800 --rpc-secret=YOUR_SE
 | RPC 路径 | `/jsonrpc` |
 | RPC 密钥 | 上面 `--rpc-secret` 设置的值；未设则留空 |
 | 保存路径 | 留空则使用 aria2 自身配置的下载目录 |
+| IDM 客户端 ID | IDM 推送使用的客户端编号，默认 `1`（IDM 多开配置时需修改） |
 
 > RPC 主机受白名单限制，仅接受 `localhost` / `127.0.0.1` / `10.x` / `172.16-31.x` /
 > `192.168.x` / `169.254.x`。云端 aria2、Tailscale、ZeroTier 等远程地址**不被支持**。

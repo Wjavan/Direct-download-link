@@ -549,6 +549,9 @@
                 dom += `<option value="${k}" ${base.getValue('setting_terminal_type') === k ? 'selected' : ''}>${terminalType[k]}</option>`;
             });
             dom += `</select></label>`;
+            const idmCfg = base.getValue('setting_idm_rpc');
+            const idmId = (Array.isArray(idmCfg) ? (idmCfg.find(i => i && i.default) || idmCfg[0] || {}).id : (idmCfg && idmCfg.id)) || '1';
+            dom += `<label class="pl-setting-label"><div class="pl-label">IDM 客户端 ID</div><input type="text" placeholder="IDM 多配置时的客户端编号，默认 1" class="pl-input listener-idm-id" value="${base.esc(idmId)}"></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">主题颜色</div> <div class="pl-color">${btn}<div></label>`;
             dom = '<div>' + dom + '</div>';
                                                 Swal.fire({
@@ -594,6 +597,10 @@
             });
             doc.on('input', '.listener-dir', async (e) => {
                 base.setValue('setting_rpc_dir', e.target.value);
+            });
+            doc.on('input', '.listener-idm-id', async (e) => {
+                const v = (e.target.value || '1').trim() || '1';
+                base.setValue('setting_idm_rpc', [{ id: v, default: true }]);
             });
             doc.on('change', '.listener-terminal', async (e) => {
                 base.setValue('setting_terminal_type', e.target.value);

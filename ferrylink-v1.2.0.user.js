@@ -1966,23 +1966,31 @@ base.iframeDownload(e.currentTarget.dataset.link);
             });
         },
         _insertBeforeUpload(container, $button) {
+            // DEBUG: log all text content of direct children + upload candidates
+            let childTexts = [];
+            for (let c of container.children) {
+                let t = (c.innerText || c.textContent || '').trim().slice(0, 50);
+                if (t) childTexts.push(t);
+            }
+            console.log('[tianyi-debug] container:', container.tagName, container.className.slice(0,60));
+            console.log('[tianyi-debug] children texts:', JSON.stringify(childTexts));
             let uploadBtn = null;
-            // ponytail: use substring match instead of === because tianyi's upload button
-            // text may include icon text or other descendants, so exact match fails and we
-            // fall back to container.firstChild (wrong position, next to 开通会员).
             let candidates = container.querySelectorAll('a, button, div, span, em, i');
             for (let el of candidates) {
                 let text = (el.innerText || el.textContent || '').trim();
                 if (text.includes('上传')) {
                     uploadBtn = el;
+                    console.log('[tianyi-debug] found upload btn:', el.tagName, el.className.slice(0,50), '|', text.slice(0,30));
                     break;
                 }
             }
             if (uploadBtn) {
-                // find the closest clickable ancestor to use as insertion point
                 let target = uploadBtn.closest && (uploadBtn.closest('a, button, [class*="btn"], [class*="button"]') || uploadBtn);
+                console.log('[tianyi-debug] target:', target?.tagName, target?.className?.slice(0,50));
+                console.log('[tianyi-debug] insertBefore', $button[0]?.className, 'before', target?.tagName, target?.className?.slice(0,50));
                 container.insertBefore($button[0], target);
             } else {
+                console.log('[tianyi-debug] NO upload btn found, using firstChild');
                 container.insertBefore($button[0], container.firstChild);
             }
         },

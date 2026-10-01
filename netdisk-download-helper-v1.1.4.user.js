@@ -1601,8 +1601,6 @@
             });
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
-                        // ponytail: reset here, not in the blob handler — picking any mode from the
-                        // dropdown re-enters the normal dialog, so 直接下载 must come back.
                         Swal.showLoading();
                         try {
                             await this.getPCSLink();
@@ -1616,7 +1614,7 @@
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
-            doc.on('click', '.listener-link-api.browser', async (e) => {
+            doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
                 let href = e.currentTarget.dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
@@ -1779,7 +1777,7 @@
                                 if (mode === 'api') {
                                     content += `<div class="pl-item">
                                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                                <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                                 </div>`;
                                 }

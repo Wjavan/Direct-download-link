@@ -65,7 +65,7 @@
         return;
     }
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
-        doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
+        doc = $(document), progress = {}, request = {}, ins = {};
 
     let watched = {};
     const customClass = {
@@ -330,192 +330,6 @@
             }
             return out;
         },
-        rangeSupported(url, headers) {
-                    return new Promise((resolve) => {
-                        const key = 'probe_' + Date.now();
-                        const done = (v) => { delete request[key]; resolve(v); };
-                        request[key] = GM_xmlhttpRequest({
-                            method: "GET", url,
-                            headers: Object.assign({}, headers, { 'Range': 'bytes=0-0' }),
-                            responseType: 'arraybuffer',
-                            timeout: 60000,
-                            onload: (res) => {
-                                const cr = this.headersObj(res);
-                                const ok = res.status === 206 && /bytes/i.test(cr['content-range'] || '');
-                                done({ ok, size: ok ? parseInt(String(cr['content-range']).split('/')[1], 10) : 0 });
-                            },
-                            onerror: () => done({ ok: false, size: 0 }),
-                            ontimeout: () => done({ ok: false, size: 0 }),
-                        });
-                    });
-                },
-        fetchChunk(url, headers, start, end, attempt = 0) {
-                    return new Promise((resolve, reject) => {
-                        // ponytail: must be tracked so _resetData() can abort in-flight chunks;
-                        // otherwise they keep occupying GM_xmlhttpRequest's connection pool after
-                        // the dialog closes, and a later getRealLink POST never gets a socket.
-                        const key = 'chunk_' + start + '_' + end + '_' + Date.now();
-                        const clear = () => { delete request[key]; };
-                        const fail = (msg) => {
-                            clear();
-                            // ponytail: the CDN drops the occasional ranged GET even at 2-way
-                            // concurrency. One retry after a short backoff absorbs that; a real
-                            // failure repeats and still surfaces, so nothing is masked.
-                            if (attempt < 2) {
-                                setTimeout(() => this.fetchChunk(url, headers, start, end, attempt + 1)
-                                    .then(resolve, reject), 800 * (attempt + 1));
-                            } else {
-                                reject(new Error(msg));
-                            }
-                        };
-                        request[key] = GM_xmlhttpRequest({
-                            method: "GET", url,
-                            headers: Object.assign({}, headers, { 'Range': `bytes=${start}-${end}` }),
-                            responseType: 'arraybuffer',
-                            timeout: 300000,
-                            onload: (res) => {
-                                const want = end - start + 1;
-                                // ponytail: a truncated body can arrive with a 206 status, so the
-                                // byte count is the real check — without it a short chunk silently
-                                // corrupts the merged Blob.
-                                if ((res.status === 206 || res.status === 200)
-                                    && res.response && res.response.byteLength === want) {
-                                    clear();
-                                    resolve(res.response);
-                                } else {
-                                    fail('分片失败（HTTP ' + res.status + '，收到 '
-                                        + ((res.response && res.response.byteLength) || 0) + '/' + want + ' 字节）');
-                                }
-                            },
-                            onerror: () => fail('分片请求出错'),
-                            ontimeout: () => fail('分片超时'),
-                        });
-                    });
-                },
-        // ponytail: fallback for a CDN that refuses Range (aliyundrive 403s the probe).
-                // One plain GET streamed whole into a Blob and saved — no chunking, no progress
-                // by percentage (the server may omit Content-Length), but it completes. Mirrors
-                // LinkSwift, which falls back to a single stream instead of erroring.
-                downloadSingleStream(url, headers, extra) {
-                    const key = 'single_' + Date.now();
-                    const idx = extra && extra.index;
-                    return new Promise((resolve, reject) => {
-                        const clear = () => { delete request[key]; };
-                        const req = GM_xmlhttpRequest({
-                            method: "GET", url,
-                            headers,
-                            responseType: 'stream',
-                            timeout: 0,
-                            ontimeout: () => { clear(); reject(new Error('下载超时')); },
-                            onload: async (res) => {
-                                clear();
-                                if (res.status >= 400) {
-                                    reject(new Error('下载失败（HTTP ' + res.status + '）'));
-                                    return;
-                                }
-                                try {
-                                    // ponytail: responseType:'stream' lets the save dialog open at the
-                                    // START of the download instead of after the whole body is buffered.
-                                    // With 'blob' the page downloaded at full speed into memory and the
-                                    // user watched a frozen 0% for minutes — the slowness was ours, not
-                                    // the CDN. chunked() keeps memory flat and reports real totals.
-                                    const reader = res.response.getReader();
-                                    const total = +res.response.headers.get('content-length') || 0;
-                                    let loaded = 0;
-                                    const parts = [];
-                                    for (;;) {
-                                        const { done, value } = await reader.read();
-                                        if (done) break;
-                                        parts.push(value);
-                                        loaded += value.byteLength;
-                                        if (idx != null) progress[idx] = total > 0
-                                            ? Math.min(99, Math.floor(loaded * 100 / total)) : 0;
-                                    }
-                                    if (idx != null) progress[idx] = 100;
-                                    this.blobDownload(new Blob(parts), extra && extra.filename);
-                                    resolve({ status: res.status });
-                                } catch (e) {
-                                    reject(new Error('下载中断：' + (e && e.message || '未知错误')));
-                                }
-                            },
-                            onerror: () => { clear(); reject(new Error('下载请求出错')); },
-                        });
-                        request[key] = req;
-                    });
-                },
-        download(url, headers, extra) {
-                    // ponytail: concurrency is capped by the pan CDN, not by GM_xmlhttpRequest.
-                    // Measured against a real baidu dlink (8.9MB pdf, 9x1MB ranges):
-                    //   6-way -> 3/9 chunks ok, 6 timed out mid-body  (reported as 分片请求出错)
-                    //   3-way -> 5/9 ok
-                    //   2-way -> 9/9 ok, full byte count
-                    // Baidu throttles concurrent ranged GETs on one signed URL, so 2 is the cap.
-                    // ponytail: 2 was tuned against the BAIDU cdn, measured on a real dlink:
-                    //   6-way -> 3/9 chunks ok, 6 timed out mid-body
-                    //   3-way -> 5/9 ok
-                    //   2-way -> 9/9 ok
-                    // Baidu throttles concurrent ranged GETs on one signed url. Aliyun serves from
-                    // OSS (x-oss-signature, x-oss-expires in the dlink), which does not apply that
-                    // per-url limit, so 6 gives aliyun headroom while baidu stays capped. If a
-                    // baidu fetch starts reporting 分片请求出错 again, drop this to 2.
-            const THREADS = 6, CHUNK = 1024 * 1024, MAX = 1024 * 1024 * 1024;
-            return this.rangeSupported(url, headers).then(async (probe) => {
-                            if (!probe.ok || !probe.size) {
-                                // ponytail: a CDN that refuses Range is not a dead end — LinkSwift handles
-                                // this exact case by falling back to a single-stream download instead of
-                                // erroring. We threw here, which made 增强下载 useless on aliyundrive (its
-                                // CDN 403s the probe) and left it identical to 直接下载 once the button was
-                                // wired to the iframe. Single GET it is: no chunking, no Range, but it works.
-                                return this.downloadSingleStream(url, headers, extra);
-                            }
-                if (probe.size > MAX) {
-                    throw new Error('文件过大（' + Math.round(probe.size / 1048576) + 'MB），浏览器内存与链接时效不支持，请用 Aria2/RPC 外部下载');
-                }
-                const total = probe.size;
-                const parts = [];
-                let cursor = 0, done = 0;
-                const worker = async () => {
-                    while (true) {
-                        // ponytail: `while (cursor < total)` re-checks a shared cursor after an
-                        // await, which is fine, but the loop must claim its range BEFORE yielding
-                        // — otherwise two workers can read the same cursor and fetch it twice,
-                        // leaving a gap that silently truncates the file.
-                        const start = cursor;
-                        if (start >= total) return;
-                        const end = Math.min(start + CHUNK - 1, total - 1);
-                        cursor = end + 1;
-                        const buf = await this.fetchChunk(url, headers, start, end);
-                        parts.push({ start, buf });
-                        done += buf.byteLength;
-                        if (extra && extra.index != null) progress[extra.index] = Math.min(100, Math.floor(done * 100 / total));
-                    }
-                };
-                const pool = [];
-                for (let i = 0; i < THREADS; i++) pool.push(worker());
-                await Promise.all(pool);
-                // ponytail: verify no range was skipped — a duplicate cursor claim leaves a hole
-                // and the merged Blob silently loses those bytes.
-                const covered = parts.reduce((n, p) => n + p.buf.byteLength, 0);
-                if (covered !== total) {
-                    throw new Error('分片不完整（' + covered + '/' + total + ' 字节），请重试');
-                }
-                parts.sort((a, b) => a.start - b.start);
-                const merged = new Blob(parts.map(p => p.buf));
-                parts.length = 0;
-                this.blobDownload(merged, extra && extra.filename);
-                return { status: 200 };
-            });
-        },
-        blobDownload(blob, filename) {
-            if (blob instanceof Blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.click();
-                setTimeout(() => URL.revokeObjectURL(url), 60000);
-            }
-        },
         _resetData() {
                     progress = {};
                     $.each(request, (key) => {
@@ -524,7 +338,6 @@
                     $.each(ins, (key) => {
                         clearInterval(ins[key]);
                     });
-                    idm = {};
                     ins = {};
                     request = {};
                 },
@@ -583,21 +396,7 @@
                     ontimeout: () => { clear(); reject(new Error('请求超时（30s）')); },
                     onload: (res) => {
                         clear();
-                        if (res.status === 204) {
-                            requestObj.abort();
-                            if (extra && extra.index != null) idm[extra.index] = true;
-                        }
-                        if (type === 'blob') {
-                            if (res.status === 200) {
-                                base.blobDownload(res.response, extra && extra.filename);
-                            } else {
-                                reject(new Error('下载失败（HTTP ' + res.status + '）'));
-                                return;
-                            }
-                            resolve(res);
-                        } else {
-                            resolve(res.response || res.responseText);
-                        }
+                        resolve(res.response || res.responseText);
                     },
                     onprogress: (res) => {
                         if (extra && extra.filename && extra.index != null) {
@@ -1089,7 +888,6 @@
                 ins[i] && clearInterval(ins[i]);
                 request[i] && request[i].abort();
                 progress[i] = 0;
-                idm[i] = false;
             }
             doc.on('mouseenter mouseleave click', '.pl-button.g-dropdown-button', (e) => {
                 if (e.type === 'mouseleave') {
@@ -1117,64 +915,13 @@
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                let o = _factory(e);
-                let $width = o.item.find('.pl-progress-inner');
-                let $text = o.item.find('.pl-progress-inner-text');
-                let filename = o.link[0].dataset.filename;
-                let index = o.link[0].dataset.index;
-                _reset(index);
-                base.download(o.link[0].dataset.link, {"User-Agent": pan.ua}, {filename, index}).catch((err) => {
-                    clearInterval(ins[index]);
-                    o.tip.text(err && err.message ? '下载失败：' + err.message : '下载失败').show();
-                    o.link.show();
-                    _reset(index);
-                });
-                ins[index] = setInterval(() => {
-                    let prog = +progress[index] || 0;
-                    let isIDM = idm[index] || false;
-                    if (isIDM) {
-                        o.tip.hide();
-                        o.progress.hide();
-                        o.link.text('已成功唤起IDM，请查看IDM下载框！').animate({opacity: '0.5'}, "slow").show();
-                        clearInterval(ins[index]);
-                        idm[index] = false;
-                    } else {
-                        o.link.hide();
-                        o.tip.hide();
-                        o.progress.show();
-                        $width.css('width', prog + '%');
-                        $text.text(prog + '%');
-                        if (prog === 100) {
-                            clearInterval(ins[index]);
-                            progress[index] = 0;
-                            o.item.find('.pl-progress-stop').hide();
-                            o.item.find('.pl-progress-tip').html('下载完成，正在弹出浏览器下载框！');
-                        }
-                    }
-                }, 500);
-            });
-            doc.on('click', '.listener-how', async (e) => {
-                let o = _factory(e);
-                let index = o.link[0].dataset.index;
-                if (request[index]) {
-                    request[index].abort();
-                    clearInterval(ins[index]);
-                    o.progress.hide();
-                    o.tip.show();
-                }
-            });
-            doc.on('click', '.listener-stop', async (e) => {
-                let o = _factory(e);
-                let index = o.link[0].dataset.index;
-                if (request[index]) {
-                    request[index].abort();
-                    clearInterval(ins[index]);
-                    o.tip.hide();
-                    o.progress.hide();
-                    o.link.show(0);
-                }
+                // ponytail: the hidden iframe makes the BROWSER request the dlink, which is the
+                // only way IDM's extension sees it. The previous base.download() path fetched every
+                // chunk through GM_xmlhttpRequest and saved a Blob via a[download] — invisible to
+                // IDM, so baidu alone could never hand a file to the download manager.
+                base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);
@@ -1405,18 +1152,7 @@
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div>
-                                <div class="pl-item-progress" style="display: none">
-                                    <div class="pl-progress">
-                                        <div class="pl-progress-outer"></div>
-                                        <div class="pl-progress-inner" style="width:0%">
-                                          <div class="pl-progress-inner-text">0%</div>
-                                        </div>
-                                    </div>
-                                    <span class="pl-progress-stop listener-stop">取消下载</span>
-                                    <span class="pl-progress-tip">未发现IDM，使用自带浏览器下载</span>
-                                    <span class="pl-progress-how listener-how">如何唤起IDM？</span>
-                                </div></div>`;
+                                <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div></div>`;
                 }
                 if (mode === 'aria') {
                     let alink = this.convertLinkToAria(dlink, filename, pan.ua);

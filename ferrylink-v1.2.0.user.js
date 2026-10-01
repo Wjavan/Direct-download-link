@@ -1976,20 +1976,22 @@ base.iframeDownload(e.currentTarget.dataset.link);
             setTimeout(() => this._relocateIfNeeded($button), 500);
         },
         _relocateIfNeeded($button) {
-            // Find upload button in the page (not in nav-opea)
+            // Find upload button in the page (not in nav-opea), use substring match
             var uploadBtn = null;
             document.querySelectorAll('button,a,[role=button]').forEach(function(el){
                 var t = (el.textContent||'').trim();
-                if ((t === '上传' || t === '上传文件') && !el.closest('.nav-opea')) {
-                    uploadBtn = el;
+                if (t.indexOf('上传')>=0 && !el.closest('.nav-opea')) {
+                    // Prefer exact or near-exact match first
+                    if (!uploadBtn || t.length < (uploadBtn.textContent||'').trim().length) {
+                        uploadBtn = el;
+                    }
                 }
             });
             if (!uploadBtn) return;
             var parent = uploadBtn.parentElement;
             if (!parent) return;
-            // Move button before upload button's parent
             parent.insertBefore($button[0], uploadBtn);
-            console.log('[tianyi] relocated before upload button:', uploadBtn.tagName, uploadBtn.className.slice(0,30));
+            console.log('[tianyi] relocated before:', uploadBtn.tagName, uploadBtn.className.slice(0,30), '|', (uploadBtn.textContent||'').trim().slice(0,15));
         },
         addButton() {
             if (!pt) return;

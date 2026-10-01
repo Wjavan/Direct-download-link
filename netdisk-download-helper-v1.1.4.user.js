@@ -453,7 +453,15 @@
                     //   3-way -> 5/9 ok
                     //   2-way -> 9/9 ok, full byte count
                     // Baidu throttles concurrent ranged GETs on one signed URL, so 2 is the cap.
-            const THREADS = 2, CHUNK = 1024 * 1024, MAX = 1024 * 1024 * 1024;
+                    // ponytail: 2 was tuned against the BAIDU cdn, measured on a real dlink:
+                    //   6-way -> 3/9 chunks ok, 6 timed out mid-body
+                    //   3-way -> 5/9 ok
+                    //   2-way -> 9/9 ok
+                    // Baidu throttles concurrent ranged GETs on one signed url. Aliyun serves from
+                    // OSS (x-oss-signature, x-oss-expires in the dlink), which does not apply that
+                    // per-url limit, so 6 gives aliyun headroom while baidu stays capped. If a
+                    // baidu fetch starts reporting 分片请求出错 again, drop this to 2.
+            const THREADS = 6, CHUNK = 1024 * 1024, MAX = 1024 * 1024 * 1024;
             return this.rangeSupported(url, headers).then(async (probe) => {
                             if (!probe.ok || !probe.size) {
                                 // ponytail: a CDN that refuses Range is not a dead end — LinkSwift handles

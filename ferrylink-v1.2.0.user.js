@@ -1988,7 +1988,28 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     }
                 });
                 console.log('[tianyi] buttons outside nav-opea:', btns.slice(0,20).join('; '));
-                // Look for upload button
+                // Also scan iframes (qiankun micro-apps may contain upload button)
+                document.querySelectorAll('iframe').forEach(function(iframe){
+                    try {
+                        var doc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (!doc) return;
+                        doc.querySelectorAll('button,a,[role=button]').forEach(function(el){
+                            var t = (el.textContent||'').trim();
+                            if (t.indexOf('上传')>=0) {
+                                console.log('[tianyi] FOUND in iframe:', el.tagName, el.className.slice(0,30), '|', t.slice(0,15));
+                            }
+                        });
+                    } catch(e) {} // cross-origin
+                });
+                // Also scan ALL elements (not just buttons) for "上传"
+                var allElements = [];
+                document.querySelectorAll('*').forEach(function(el){
+                    var t = (el.textContent||'').trim();
+                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea') && el.childElementCount===0) {
+                        allElements.push(el.tagName + ' ' + String(el.className).slice(0,30) + ' | ' + t.slice(0,20));
+                    }
+                });
+                console.log('[tianyi] elements with 上传:', allElements.join('; '));
                 var uploadBtn = null;
                 document.querySelectorAll('button,a,[role=button]').forEach(function(el){
                     var t = (el.textContent||'').trim();

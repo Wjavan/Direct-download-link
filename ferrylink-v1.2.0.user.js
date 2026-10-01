@@ -530,6 +530,17 @@
             }, {
                 name: 'setting_theme_color',
                 value: '#09AAFF'
+            }, {
+                // ponytail: IDM's capture endpoint is a fixed local port (1001) with a client id.
+                // The id is part of the URL path, so a second browser profile in the same IDM would
+                // need a different one — hence a list, matching LinkSwift's shape rather than a
+                // flat string. Only the default entry is ever used today; the array exists so
+                // adding a second id later does not need a storage migration.
+                name: 'setting_idm_rpc',
+                value: [{
+                    id: '1',
+                    default: true
+                }]
             }];
             value.forEach((v) => {
                 base.getValue(v.name) === undefined && base.setValue(v.name, v.value);
@@ -612,15 +623,49 @@
             });
 
             // ponytail: one registration covers all six adapters — every api row renders this
-            // button, and every one of them already funnels its download through iframeDownload().
-            // The button differs from the link only in being explicit about the target: IDM's
-            // "高级浏览器整合" is what makes a plain <a href> hand off instead of saving in-page.
-            doc.on('click', '.listener-idm', (e) => {
+            // button, and the raw link beside it still uses iframeDownload() for plain browser
+            // downloads.
+            //
+            // This pushes to IDM's capture protocol instead of starting a browser request. That is
+            // the whole point: IDM's extension decides whether to take over a request by the file
+            // extension in the URL *path*, and xunlei's signed link is /download/?…&fext=rar — no
+            // extension in the path, so the extension passed it straight to the browser. Asking IDM
+            // directly means the extension and filename travel as explicit fields, and the URL
+            // never has to be rewritten (rewriting it breaks the signature — measured: HTTP 206
+            // for the original, "Failed to fetch" once a fake suffix was inserted).
+            doc.on('click', '.listener-idm', async (e) => {
                 e.preventDefault();
-                const href = e.currentTarget.dataset.link;
-                if (!base.iframeDownload(href)) return;
-                $(e.currentTarget).text('已唤起 IDM，请查看下载框')
-                    .animate({opacity: '0.5'}, "slow");
+                const btn = $(e.currentTarget);
+                const href = btn.data('link');
+                if (!/^https?:\/\//i.test(href || '')) {
+                    message.error('提示：下载链接无效！');
+                    return;
+                }
+                // ponytail: guard against a second click while the first is still in flight —
+                // sendLinkToIDM queues rather than rejects, so a double-click would silently send
+                // the same file twice.
+                if (btn.attr('data-processing') === 'true') return;
+                btn.attr('data-processing', 'true');
+                const original = btn.html();
+                btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
+                // filesize 0: the protocol's flag 2 tells IDM to query the size itself, and the
+                // button markup carries no size attribute, so guessing one would be worse.
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, {
+                    "Referer": location.origin + '/'
+                });
+                btn.attr('data-processing', 'false');
+                btn.removeClass('is-loading');
+                if (res === 'success') {
+                    btn.removeClass('pl-btn-danger').html(original).text('已推送至 IDM，请查看下载框')
+                        .animate({opacity: '0.5'}, "slow");
+                } else {
+                    btn.addClass('pl-btn-danger').text('推送失败：IDM 未响应，请确认已启动并允许连接')
+                        .animate({opacity: '0.5'}, "slow");
+                    setTimeout(() => {
+                        btn.removeClass('pl-btn-danger').html(original)
+                            .attr('title', '需 IDM 已启动，且版本支持本地捕获（2019 年后版本）');
+                    }, 4000);
+                }
             });
         },
         createLoading() {
@@ -648,6 +693,97 @@
             this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
             return true;
+        },
+
+        // ponytail: IDM's capture protocol, not an extension sniff. IDM listens on 127.0.0.1:1001
+        // and accepts a hand-built message that names the file, its extension and its size outright
+        // — so a signed CDN URL with no extension in its path (xunlei's /download/?…&fext=rar) is
+        // no obstacle. Every earlier attempt (hidden iframe, window.open, appending a fake
+        // extension to the path) tried to coax a browser request that IDM's extension would
+        // choose to grab, and IDM matches on the path suffix, so all three failed. This asks IDM
+        // directly instead. Wire format and the three quirks below follow LinkSwift's
+        // sendLinkToIDM(), which is the only known-good implementation of this protocol.
+        standHeaders(headers = {}, addDefault = false) {
+            if (!headers) return {};
+            if (typeof headers === 'string') {
+                const raw = {};
+                headers.split(/[\r\n]+/).forEach(line => {
+                    if (!line.trim() || !line.includes(':')) return;
+                    const [key, ...rest] = line.split(':');
+                    raw[key.trim().toLowerCase()] = rest.join(':').trim();
+                });
+                headers = raw;
+            }
+            let out = {};
+            for (let key in headers) {
+                const value = typeof headers[key] === 'object' ? JSON.stringify(headers[key]) : String(headers[key]);
+                out[key.toLowerCase().split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('-')] = value;
+            }
+            if (addDefault) return out;
+            return {
+                "Dnt": "",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "User-Agent": navigator.userAgent,
+                "Origin": location.origin,
+                "Referer": `${location.origin}/`,
+                ...out
+            };
+        },
+        async sendLinkToIDM(link, filename, filesize, headers = {}) {
+            const list = base.getValue('setting_idm_rpc') || [];
+            const rpc = list.find(i => i && i.default) || list[0] || { id: '1' };
+            // ponytail: serialised through a promise chain. IDM answers one MSG at a time and
+            // mismatched seq numbers are silently dropped, so overlapping clicks lose downloads
+            // without any error — one in flight at a time is the fix.
+            if (!this.sendLinkToIDM.lock) this.sendLinkToIDM.lock = Promise.resolve();
+            return this.sendLinkToIDM.lock = this.sendLinkToIDM.lock.then(async () => {
+                headers = this.standHeaders(headers);
+                if (!this.sendLinkToIDM.seq) this.sendLinkToIDM.seq = 1;
+                const seq = this.sendLinkToIDM.seq;
+                const time = Date.now();
+                const url = `http://127.0.0.1:1001/client/${encodeURIComponent(rpc.id)}?seq=${seq}`;
+                const ext = base.getExtension(filename);
+                // quirk 1: IDM's header parser is rigid — without the trailing newline it
+                // refuses to parse the block at all.
+                const headersText = Object.entries(headers).map(([k, v]) => `${k}: ${v}`).join('\n') + '\n';
+                // quirk 2: the length prefix is a BYTE count, so multi-byte filenames need
+                // Blob().size, not String.length (which counts UTF-16 units).
+                const format = (key, val) => {
+                    if (val === undefined || val === null) return '';
+                    const str = String(val);
+                    return `${key}=${new Blob([str]).size}:${str}`;
+                };
+                const fields = [
+                    format(4, ext),
+                    format(6, link),
+                    format(7, location.origin),
+                    format(11, headersText),
+                    format(100, filename),
+                    format(122, 4)
+                ];
+                // quirk 3: the envelope is undocumented. Read left to right:
+                // seq, request kind 13, flags 1, 10241 (use the file info we supply),
+                // an offset that must exceed seq, 0, timestamp, 0, 1, 2 (fetch info from the
+                // server), file size, then the field list.
+                const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:${filesize || 0}:0,${fields.join(',')};`;
+                // ponytail: no abort() here. LinkSwift's base.post returns the raw
+                // GM_xmlhttpRequest so it can cancel; ours returns a Promise, so the request
+                // simply keeps running until its own 30s timeout. Racing is still correct — the
+                // rejection is what matters — the abandoned request only holds one localhost
+                // socket for a few seconds.
+                const post = base.post(url, data, {}, 'text').catch(() => false);
+                const timeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('timeout')), 15000);
+                });
+                const res = await Promise.race([post, timeout]).catch(() => false);
+                if (res && String(res).endsWith(`${seq}:3;`)) {
+                    this.sendLinkToIDM.seq++;
+                    return 'success';
+                }
+                return 'fail';
+            });
         },
         getMirrorList(link, mirror, thread = 2) {
             let host = new URL(link).host;
@@ -852,6 +988,9 @@
                 border: 2px solid currentColor; border-top-color: transparent;
                 border-radius: 50%; color: #fff;
                 animation: plSpin var(--pl-spin) linear infinite; }
+            /* the inline icon is a child element, so colour:transparent on the button does not
+               reach it — hide it explicitly or the spinner lands on top of a visible glyph. */
+            .pl-btn-primary.is-loading > .pl-ico, .pl-item-btn.is-loading > .pl-ico { display: none; }
             .pl-btn-warning.is-loading::before { color: var(--pl-warning); }
              @keyframes plSpin { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
             @media (prefers-reduced-motion: reduce) {

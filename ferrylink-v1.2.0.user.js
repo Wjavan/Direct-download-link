@@ -792,7 +792,6 @@
                 const res = raw || false;
                 // DEBUG: show what IDM actually replied
                 // DEBUG
-                console.log('[FerryLink IDM]', { seq, res, filename, link: link.slice(0,80) });
                 // replay and drops it without answering, so a failed send used to wedge the
                 // counter: the first attempt (rejected, e.g. the wrong 10241 size flag) burned
                 // seq=1, and every attempt after that reused 1 and got silence — the button then

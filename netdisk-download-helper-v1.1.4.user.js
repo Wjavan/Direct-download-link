@@ -66,9 +66,7 @@
     }
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
-    // ponytail: whether the CDN serving this batch of links honours Range. Set by the probe in
-    // ali's getPCSLink before generateDom runs; gates the 增强下载 button.
-    let rangeOk = false;
+
     let watched = {};
     const customClass = {
         popup: 'pl-popup',
@@ -1788,18 +1786,10 @@
                                 res.forEach((val, index) => {
                                     if (val && typeof val === 'string' && /^https?:/.test(val)) noUrlSelectList[index].downloadUrl = val;
                                 });
-                                // ponytail: 增强下载 needs Range; 普通下载 does not. Probe the first link once and
-                                // let generateDom gate the button on the result, so an unsupporting CDN hides the
-                                // control instead of offering something that can only fail. One 1-byte request.
-                                const sample = selectList.find(v => v.downloadUrl);
-                                if (sample) {
-                                    const probe = await base.rangeSupported(sample.downloadUrl, {"Referer": location.origin});
-                                    rangeOk = !!(probe && probe.ok);
-                                }
-                                            let html = this.generateDom(selectList);
-                                            this.showMainDialog(pan[mode][0], html, pan[mode][1]);
-                                        },
-        generateDom(list) {
+                                let html = this.generateDom(selectList);
+                                                                                            this.showMainDialog(pan[mode][0], html, pan[mode][1]);
+                                                        },
+                                        generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
             list.forEach((v, i) => {
@@ -1814,7 +1804,7 @@
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>
-                                ${rangeOk ? `<button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>` : ''}
+                                <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                 <div class="pl-item-progress" style="display: none">
                                     <div class="pl-progress">

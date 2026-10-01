@@ -1544,15 +1544,11 @@
                 let dataset = e.currentTarget.dataset;
                 let href = dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                toast.fire({ title: '正在解析下载地址...', timer: null });
-                try {
-                    let finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
-                    if (finalUrl) href = finalUrl;
-                } catch (e) {
-                    // Ignore resolution errors, fall back to original href
-                }
-                // ponytail: show the resolved link in a copyable popup instead of auto-downloading.
-                Swal.close();
+                // ponytail: no resolution probe here. It was a HEAD (10s timeout) plus a ranged
+                // GET fallback (another 10s) purely to rewrite the link for display, so every
+                // click stalled before the dialog appeared. The iframe follows the redirect
+                // itself, so 直接下载 starts immediately; only 复制链接 needs the resolved URL,
+                // and it resolves lazily at the moment the user asks for it.
                 Swal.fire({
                     title: '下载链接',
                     input: 'text',
@@ -1565,9 +1561,18 @@
                     showCloseButton: true,
                     position: 'top',
                     width: 800,
-                }).then((result) => {
+                }).then(async (result) => {
                     if (result.isConfirmed) {
-                        base.setClipboard(href);
+                        let out = href;
+                        toast.fire({ title: '正在解析下载地址...', timer: null });
+                        try {
+                            const finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
+                            if (finalUrl) out = finalUrl;
+                        } catch (e) {
+                            // resolution is best-effort; the original link still downloads
+                        }
+                        Swal.close();
+                        base.setClipboard(out);
                         message.success('链接已复制到剪贴板');
                     } else if (result.dismiss === 'cancel') {
                         let iframe = document.getElementById('downloadIframe');

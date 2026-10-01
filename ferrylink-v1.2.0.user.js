@@ -722,14 +722,16 @@
                 out[key.toLowerCase().split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('-')] = value;
             }
             if (addDefault) return out;
-            // ponytail: no Origin/Referer/User-Agent defaults. IDM uses its own networking
-            // stack to fetch the file, and these headers flow to the CDN — the CDN sees them
-            // as the download request's headers, not the page's. Hardcoding Origin from the
-            // pan page caused xunlei's CDN to reject the download ("error during download")
-            // because the Origin didn't match what the CDN expected. LinkSwift's xunlei call
-            // passes NO custom headers, so standHeaders adds them and they happen to work.
-            // We match that by not adding them either.
-            return out;
+            return {
+                "Dnt": "",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "User-Agent": navigator.userAgent,
+                "Origin": location.origin,
+                "Referer": `${location.origin}/`,
+                ...out
+            };
         },
         async sendLinkToIDM(link, filename, filesize, headers = {}) {
             const list = base.getValue('setting_idm_rpc') || [];

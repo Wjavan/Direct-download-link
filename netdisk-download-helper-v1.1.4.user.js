@@ -1524,6 +1524,23 @@
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/"`);
         },
         addPageListener() {
+            // ponytail: ali's api row was rebuilt to match baidu's byte-for-byte (pl-item-tip +
+            // the stop/tip/how spans), so it needs baidu's _factory/_reset helpers and the tip
+            // handlers. Without them the IDM hint bar renders but never reacts.
+            function _factory(e) {
+                let target = $(e.target);
+                let item = target.parents('.pl-item');
+                let link = item.find('.pl-item-link');
+                let progress = item.find('.pl-item-progress');
+                let tip = item.find('.pl-item-tip');
+                return { item, link, progress, tip, target };
+            }
+            function _reset(i) {
+                ins[i] && clearInterval(ins[i]);
+                request[i] && request[i].abort();
+                progress[i] = 0;
+                idm[i] = false;
+            }
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
                         Swal.showLoading();
@@ -1541,62 +1558,69 @@
                     });
             doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                $('#downloadIframe').attr('src', e.currentTarget.dataset.link);
-
-            doc.on('click', '.listener-link-api.blob', async (e) => {
-                            e.preventDefault();
-                            let dataset = e.currentTarget.dataset;
-                            let href = dataset.link;
-                            let filename = dataset.filename;
-                            let index = dataset.index;
-                            // getPCSLink already resolved download_url into data-link; re-requesting it
-                            // here hung GM_xmlhttpRequest, so trust data-link.
-                            if (!href) {
-                                return message.error('提示：未获取到下载链接，请刷新页面后重试！');
-                            }
-                let $item = $(e.currentTarget).closest('.pl-item');
-                $item.find('.listener-link-api').hide();
-                let $progress = $item.find('.pl-item-progress');
-                let $width = $progress.find('.pl-progress-inner');
-                let $text = $progress.find('.pl-progress-inner-text');
-                let $tip = $progress.find('.pl-progress-tip');
-                $progress.show();
-                $tip.text('正在通过文件流下载…');
-                clearInterval(ins[index]);
-                base.download(href, {"Referer": `https://${location.host}/`}, {filename, index}).catch((err) => {
+                let o = _factory(e);
+                let $width = o.item.find('.pl-progress-inner');
+                let $text = o.item.find('.pl-progress-inner-text');
+                let filename = o.link[0].dataset.filename;
+                let index = o.link[0].dataset.index;
+                _reset(index);
+                // ponytail: ali's config has no ua, so send the Referer its CDN checks instead of
+                // baidu's User-Agent. Everything else is baidu's handler verbatim.
+                base.download(o.link[0].dataset.link, {"Referer": location.origin}, {filename, index}).catch((err) => {
                     clearInterval(ins[index]);
-                    $tip.text(err && err.message ? '下载失败：' + err.message : '下载失败');
-                    $width.css('width', '0%');
-                    $text.text('0%');
-                    // ponytail: capture the timer this failure belongs to — a user can click
-                    // again before this timeout fires, and an uncaptured restore would then
-                    // stomp the new download's UI.
-                    const failed = ins[index];
-                    setTimeout(() => {
-                        if (ins[index] === failed) {
-                            $progress.hide();
-                            $item.find('.listener-link-api').show();
-                        }
-                    }, 3000);
+                    o.tip.text(err && err.message ? '下载失败：' + err.message : '下载失败').show();
+                    o.link.show();
+                    _reset(index);
                 });
                 ins[index] = setInterval(() => {
                     let prog = +progress[index] || 0;
-                    $width.css('width', prog + '%');
-                    $text.text(prog + '%');
-                    if (prog >= 100) {
+                    let isIDM = idm[index] || false;
+                    if (isIDM) {
+                        o.tip.hide();
+                        o.progress.hide();
+                        o.link.text('已成功唤起IDM，请查看IDM下载框！').animate({opacity: '0.5'}, "slow").show();
                         clearInterval(ins[index]);
-                        $tip.text('下载完成，已弹出保存框！');
-                        setTimeout(() => {
-                            $progress.hide();
-                            $item.find('.listener-link-api').show();
-                        }, 2500);
+                        idm[index] = false;
+                    } else {
+                        o.link.hide();
+                        o.tip.hide();
+                        o.progress.show();
+                        $width.css('width', prog + '%');
+                        $text.text(prog + '%');
+                        if (prog === 100) {
+                            clearInterval(ins[index]);
+                            progress[index] = 0;
+                            o.item.find('.pl-progress-stop').hide();
+                            o.item.find('.pl-progress-tip').html('下载完成，正在弹出浏览器下载框！');
+                        }
                     }
                 }, 500);
             });
+            doc.on('click', '.listener-how', async (e) => {
+                let o = _factory(e);
+                let index = o.link[0].dataset.index;
+                if (request[index]) {
+                    request[index].abort();
+                    clearInterval(ins[index]);
+                    o.progress.hide();
+                    o.tip.show();
+                }
             });
-            doc.on('click', '.listener-link-api-btn', async (e) => {
-                base.setClipboard(e.target.dataset.filename);
-                $(e.target).text('复制成功').animate({opacity: '0.5'}, "slow");
+            doc.on('click', '.listener-stop', async (e) => {
+                let o = _factory(e);
+                let index = o.link[0].dataset.index;
+                if (request[index]) {
+                    request[index].abort();
+                    clearInterval(ins[index]);
+                    o.tip.hide();
+                    o.progress.hide();
+                    o.link.show(0);
+                }
+            });
+            doc.on('click', '.listener-back', async (e) => {
+                let o = _factory(e);
+                o.tip.hide();
+                o.link.show();
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
@@ -1741,16 +1765,18 @@
             list.forEach((v, i) => {
                 if (v.type === 'folder') return;
                 let filename = base.esc(v.name);
-                let fid = v.fileId;
-                let did = v.driveId;
+                let ext = base.getExtension(v.name);
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
                 if (mode === 'api') {
+                    // ponytail: byte-for-byte the baidu row. Ali shipped a button-based variant
+                    // (直接下载 + 增强下载 + 复制文件名) and a bare progress line, which is why its
+                    // dialog read as a different style from the other five adapters. The IDM hint
+                    // bar and the stop/tip/how spans only work together with baidu's handler.
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
-                                <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div>
                                 <div class="pl-item-progress" style="display: none">
                                     <div class="pl-progress">
                                         <div class="pl-progress-outer"></div>
@@ -1758,9 +1784,10 @@
                                           <div class="pl-progress-inner-text">0%</div>
                                         </div>
                                     </div>
-                                    <span class="pl-progress-tip">正在下载…</span>
-                                </div>
-                                </div>`;
+                                    <span class="pl-progress-stop listener-stop">取消下载</span>
+                                    <span class="pl-progress-tip">未发现IDM，使用自带浏览器下载</span>
+                                    <span class="pl-progress-how listener-how">如何唤起IDM？</span>
+                                </div></div>`;
                 }
                 if (mode === 'aria') {
                     let alink = this.convertLinkToAria(dlink, filename, navigator.userAgent);

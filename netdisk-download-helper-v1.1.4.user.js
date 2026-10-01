@@ -1544,27 +1544,38 @@
                 let dataset = e.currentTarget.dataset;
                 let href = dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                // ponytail: click == download. No resolution probe (a HEAD plus a ranged-GET
-                // fallback used to stall every click) and no intermediate dialog — the iframe
-                // follows the redirect itself. Right-click still copies the link, so the
-                // clipboard path stays available for when you need the URL itself.
-                let iframe = document.getElementById('downloadIframe');
-                if (iframe) iframe.src = href;
-                else $('#downloadIframe').attr('src', href);
-            });
-            // ponytail: right-click on the link copies it, keeping the clipboard path available
-            // now that a plain click downloads directly.
-            doc.on('contextmenu', '.listener-link-api.browser', async (e) => {
-                e.preventDefault();
-                let href = e.currentTarget.dataset.link;
-                if (!/^https?:/.test(href)) return;
-                let out = href;
-                try {
-                    const finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
-                    if (finalUrl) out = finalUrl;
-                } catch (err) { /* best-effort; the raw link still works */ }
-                base.setClipboard(out);
-                message.success('链接已复制到剪贴板');
+                // ponytail: no resolution probe before the dialog. The old HEAD+ranged-GET
+                // stalled every click for up to 20s; the iframe follows the redirect itself,
+                // so 直接下载 starts immediately and only 复制链接 resolves lazily.
+                Swal.fire({
+                    title: '下载链接',
+                    input: 'text',
+                    inputValue: href,
+                    inputAttributes: { readonly: true, onclick: 'this.select()' },
+                    showConfirmButton: true,
+                    confirmButtonText: '复制链接',
+                    showCancelButton: true,
+                    cancelButtonText: '直接下载',
+                    showCloseButton: true,
+                    position: 'top',
+                    width: 800,
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        let out = href;
+                        toast.fire({ title: '正在解析下载地址...', timer: null });
+                        try {
+                            const finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
+                            if (finalUrl) out = finalUrl;
+                        } catch (e) { /* best-effort */ }
+                        Swal.close();
+                        base.setClipboard(out);
+                        message.success('链接已复制到剪贴板');
+                    } else if (result.dismiss === 'cancel') {
+                        let iframe = document.getElementById('downloadIframe');
+                        if (iframe) iframe.src = href;
+                        else $('#downloadIframe').attr('src', href);
+                    }
+                });
             });
             doc.on('click', '.listener-link-api.blob', async (e) => {
                             e.preventDefault();

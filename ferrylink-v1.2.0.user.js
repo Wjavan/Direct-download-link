@@ -565,17 +565,21 @@
             dom += `</select></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">主题颜色</div> <div class="pl-color">${btn}<div></label>`;
             dom = '<div>' + dom + '</div>';
-            Swal.fire({
-                title: '助手配置',
-                html: dom,
-                icon: 'info',
-                showCloseButton: true,
-                showConfirmButton: false,
-                footer: "",
-            }).then(() => {
-                message.success('设置成功！');
-                // No history.go(0) — settings are saved in real-time via base.setValue()
-            });
+            console.log('[showSetting] Swal.fire about to be called');
+                        Swal.fire({
+                            title: '助手配置',
+                            html: dom,
+                            icon: 'info',
+                            showCloseButton: true,
+                            showConfirmButton: false,
+                            footer: "",
+                        }).then(() => {
+                            console.log('[showSetting] Swal.fire resolved');
+                            message.success('设置成功！');
+                            // No history.go(0) — settings are saved in real-time via base.setValue()
+                        }).catch(err => {
+                            console.error('[showSetting] Swal.fire error:', err);
+                        });
             doc.on('click', '.listener-color', async (e) => {
                 base.setValue('setting_theme_color', e.target.dataset.color);
                 message.success('设置成功！');

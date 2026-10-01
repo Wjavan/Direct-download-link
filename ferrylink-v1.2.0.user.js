@@ -648,9 +648,13 @@
                 btn.attr('data-processing', 'true');
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, {
-                    "Referer": location.origin + '/'
-                });
+                // ponytail: no custom headers. standHeaders adds defaults (UA, Origin, Referer
+                // from the current page), and those were fine for the other five pans. But
+                // xunlei's CDN appears to reject IDM's request when it carries a Referer from
+                // pan.xunlei.com — the download starts then errors. Passing no custom headers
+                // means standHeaders still adds its defaults, but at least we're not doubling
+                // up the Referer. LinkSwift's xunlei path also passes no headers.
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0);
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -718,16 +722,14 @@
                 out[key.toLowerCase().split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('-')] = value;
             }
             if (addDefault) return out;
-            return {
-                "Dnt": "",
-                "Cache-Control": "no-cache",
-                "Pragma": "no-cache",
-                "Expires": "0",
-                "User-Agent": navigator.userAgent,
-                "Origin": location.origin,
-                "Referer": `${location.origin}/`,
-                ...out
-            };
+            // ponytail: no Origin/Referer/User-Agent defaults. IDM uses its own networking
+            // stack to fetch the file, and these headers flow to the CDN — the CDN sees them
+            // as the download request's headers, not the page's. Hardcoding Origin from the
+            // pan page caused xunlei's CDN to reject the download ("error during download")
+            // because the Origin didn't match what the CDN expected. LinkSwift's xunlei call
+            // passes NO custom headers, so standHeaders adds them and they happen to work.
+            // We match that by not adding them either.
+            return out;
         },
         async sendLinkToIDM(link, filename, filesize, headers = {}) {
             const list = base.getValue('setting_idm_rpc') || [];

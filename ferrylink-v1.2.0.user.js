@@ -1184,9 +1184,9 @@
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                base.showSetting();
-            });
+            doc.on('click', '.listener-open-setting', () => {    e.preventDefault();
+                e.stopPropagation();
+                base.showSetting();});
             document.documentElement.addEventListener('mouseup', (e) => {
                 if (e.target.nodeName === 'A' && ~e.target.className.indexOf('pl-a')) {
                     e.stopPropagation();
@@ -1622,9 +1622,9 @@
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                base.showSetting();
-            });
+            doc.on('click', '.listener-open-setting', () => {    e.preventDefault();
+                e.stopPropagation();
+                base.showSetting();});
         },
         async getRealLink(d, f) {
                     try {
@@ -1977,9 +1977,9 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                            base.showSetting();
-                        });
+            doc.on('click', '.listener-open-setting', () => {    e.preventDefault();
+                e.stopPropagation();
+                base.showSetting();});
         },
         _insertBeforeUpload(container, $button) {
             // Use prepend to place button before all existing children (including 上传)
@@ -2302,9 +2302,9 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                base.showSetting();
-            });
+            doc.on('click', '.listener-open-setting', () => {    e.preventDefault();
+                e.stopPropagation();
+                base.showSetting();});
         },
         _findHomeContainer() {
             if (pan.btn && pan.btn.home) {
@@ -2742,9 +2742,9 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                base.showSetting();
-            });
+            doc.on('click', '.listener-open-setting', () => {    e.preventDefault();
+                e.stopPropagation();
+                base.showSetting();});
         },
         addButton() {
             if (!pt) return;
@@ -3003,9 +3003,9 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                base.showSetting();
-            });
+            doc.on('click', '.listener-open-setting', () => {    e.preventDefault();
+                e.stopPropagation();
+                base.showSetting();});
         },
         addButton() {
             if (!pt) return;

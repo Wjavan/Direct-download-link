@@ -1561,11 +1561,10 @@
                 e.preventDefault();
                 let href = e.currentTarget.dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                // ponytail: no base.download() here. It opens with a Range probe and throws
-                                // "该链接不支持分片下载" when the CDN refuses. The hidden iframe lets the
-                                // browser (or IDM, via its extension) fetch the URL directly — no Range, no
-                                // chunking, and no dependency on a probe result that measured one CDN node.
-                                let iframe = document.getElementById('downloadIframe');
+                // ponytail: no base.download() here — it opens with a Range probe and throws
+                // '该链接不支持分片下载' when the CDN refuses. The hidden iframe lets the browser
+                // (or IDM, via its extension) fetch the URL directly.
+                let iframe = document.getElementById('downloadIframe');
                 if (iframe) iframe.src = href;
                 else $('#downloadIframe').attr('src', href);
                 message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
@@ -1596,60 +1595,19 @@
                 o.tip.hide();
                 o.link.show();
             });
+            // Both buttons hand the URL to the hidden iframe. The blob path used to call
+            // base.download() (Range-chunked, script-streamed), but ali's CDN rejects Range —
+            // every click ended in '该链接不支持分片下载'. Verified: the probe returns 403, so no
+            // chunked path exists here. Keeping 增强下载 as a second entry point to the same
+            // iframe keeps the UI the user knows while dropping the path that cannot work.
             doc.on('click', '.listener-link-api.blob', async (e) => {
                 e.preventDefault();
-                let o = _factory(e);
-                let $progress = o.item.find('.pl-item-progress');
-                let $width = $progress.find('.pl-progress-inner');
-                let $text = $progress.find('.pl-progress-inner-text');
-                let $tip = $progress.find('.pl-progress-tip');
-                let filename = e.currentTarget.dataset.filename;
                 let href = e.currentTarget.dataset.link;
-                let index = e.currentTarget.dataset.index;
-                // getPCSLink already resolved download_url into data-link; re-requesting it here
-                // hung GM_xmlhttpRequest, so trust data-link.
-                if (!href) {
-                    return message.error('提示：未获取到下载链接，请刷新页面后重试！');
-                }
-                _reset(index);
-                                // ponytail: _factory's .link is item.find('.pl-item-link'), which matches BOTH
-                                // buttons — hiding o.link would hide 直接下载 too and never restore it. Target just
-                                // the clicked button, and restore both on the way out.
-                                $(e.currentTarget).hide();
-                o.tip.hide();
-                o.progress.show();
-                $tip.text('正在通过文件流下载…');
-                // ponytail: ali has no ua in its config, so the Referer its CDN checks replaces
-                // baidu's User-Agent here.
-                base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
-                    clearInterval(ins[index]);
-                    $tip.text(err && err.message ? '下载失败：' + err.message : '下载失败');
-                    $width.css('width', '0%');
-                    $text.text('0%');
-                    // ponytail: capture the timer this failure belongs to — a user can click again
-                    // before it fires, and an uncaptured restore would stomp the new download's UI.
-                    const failed = ins[index];
-                    setTimeout(() => {
-                        if (ins[index] === failed) {
-                            o.progress.hide();
-                            o.item.find('.pl-item-link').show();
-                        }
-                    }, 3000);
-                });
-                ins[index] = setInterval(() => {
-                    let prog = +progress[index] || 0;
-                    $width.css('width', prog + '%');
-                    $text.text(prog + '%');
-                    if (prog >= 100) {
-                        clearInterval(ins[index]);
-                        o.item.find('.pl-progress-stop').hide();
-                        $tip.text('下载完成，已弹出保存框！');
-                        setTimeout(() => {
-                            o.progress.hide();
-                            o.item.find('.pl-item-link').show();
-                        }, 2500);
-                    }
-                }, 500);
+                if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
+                let iframe = document.getElementById('downloadIframe');
+                if (iframe) iframe.src = href;
+                else $('#downloadIframe').attr('src', href);
+                message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();

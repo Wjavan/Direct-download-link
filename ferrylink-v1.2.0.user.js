@@ -2005,18 +2005,16 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 var allElements = [];
                 document.querySelectorAll('*').forEach(function(el){
                     var t = (el.textContent||'').trim();
-                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea') && el.childElementCount===0) {
+                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea')) {
                         allElements.push(el.tagName + ' ' + String(el.className).slice(0,30) + ' | ' + t.slice(0,20));
                     }
                 });
                 console.log('[tianyi] elements with 上传:', allElements.join('; '));
                 var uploadBtn = null;
-                document.querySelectorAll('button,a,[role=button]').forEach(function(el){
+                document.querySelectorAll('*').forEach(function(el){
                     var t = (el.textContent||'').trim();
-                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea')) {
-                        if (!uploadBtn || t.length < (uploadBtn.textContent||'').trim().length) {
-                            uploadBtn = el;
-                        }
+                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea') && !uploadBtn) {
+                        uploadBtn = el;
                     }
                 });
                 if (uploadBtn) {

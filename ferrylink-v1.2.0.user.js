@@ -578,10 +578,18 @@
                                                         popup: 'ferrylink-swal-popup'
                                                     },
                                                     didOpen: () => {
-                                                        const container = Swal.getContainer();
-                                                        const popup = Swal.getPopup();
-                                                        if (container) container.style.setProperty('z-index', '2147483647', 'important');
-                                                        if (popup) popup.style.setProperty('z-index', '2147483647', 'important');
+                                                            const container = Swal.getContainer();
+                                                            const popup = Swal.getPopup();
+                                                            if (container) {
+                                                                    container.style.setProperty('z-index', '2147483647', 'important');
+                                                                    container.style.setProperty('position', 'fixed', 'important');
+                                                                    console.log('[showSetting] container rect:', container.getBoundingClientRect());
+                                                            }
+                                                            if (popup) {
+                                                                    popup.style.setProperty('z-index', '2147483647', 'important');
+                                                                    popup.style.setProperty('position', 'relative', 'important');
+                                                                    console.log('[showSetting] popup rect:', popup.getBoundingClientRect());
+                                                            }
                                                     },
                                                 }).then(() => {
                                                                             message.success('设置成功！');

@@ -825,8 +825,8 @@
             .pl-btn-info { background: #606266; }
             .pl-btn-warning { background: #da9328; }
             .pl-btn-danger { background: #cc3235; }
-            .ali-button {display: inline-flex;align-items: center;justify-content: center;border: 0 solid transparent;border-radius: 5px;box-shadow: 0 0 0 0 transparent;width: fit-content;white-space: nowrap;flex-shrink: 0;font-size: 14px;line-height: 1.5;outline: 0;touch-action: manipulation;transition: background .3s ease,color .3s ease,border .3s ease,box-shadow .3s ease;color: #fff;background: rgb(99 125 255);margin-left: 20px;padding: 1px 12px;position: relative; cursor:pointer; height: 32px;}
-            .ali-button:hover {background: rgb(122, 144, 255)}
+            .ali-button {display: inline-flex;align-items: center;justify-content: center;border: 0 solid transparent;border-radius: 5px;box-shadow: 0 0 0 0 transparent;width: fit-content;white-space: nowrap;flex-shrink: 0;font-size: 14px;line-height: 1.5;outline: 0;touch-action: manipulation;transition: background .3s ease,color .3s ease,border .3s ease,box-shadow .3s ease;color: #fff;background: #3f85ff;margin-left: 20px;padding: 0px 12px;position: relative; cursor:pointer; height: 36px;}
+            .ali-button:hover {background: #619bff}
             .tianyi-button {margin-right: 20px; padding: 4px 12px; border-radius: 4px; color: #fff; font-size: 12px; border: 1px solid #0073e3; background: #2b89ea; cursor: pointer; position: relative;}
             .tianyi-button:hover {border-color: #1874d3; background: #3699ff;}
             .yidong-button {float: left; position: relative; margin: 20px 24px 20px 0; width: 98px; height: 36px; background: #3181f9; border-radius: 2px; font-size: 14px; color: #fff; line-height: 39px; text-align: center; cursor: pointer;}
@@ -1544,42 +1544,27 @@
                 let dataset = e.currentTarget.dataset;
                 let href = dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                // ponytail: no resolution probe here. It was a HEAD (10s timeout) plus a ranged
-                // GET fallback (another 10s) purely to rewrite the link for display, so every
-                // click stalled before the dialog appeared. The iframe follows the redirect
-                // itself, so 直接下载 starts immediately; only 复制链接 needs the resolved URL,
-                // and it resolves lazily at the moment the user asks for it.
-                Swal.fire({
-                    title: '下载链接',
-                    input: 'text',
-                    inputValue: href,
-                    inputAttributes: { readonly: true, onclick: 'this.select()' },
-                    showConfirmButton: true,
-                    confirmButtonText: '复制链接',
-                    showCancelButton: true,
-                    cancelButtonText: '直接下载',
-                    showCloseButton: true,
-                    position: 'top',
-                    width: 800,
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        let out = href;
-                        toast.fire({ title: '正在解析下载地址...', timer: null });
-                        try {
-                            const finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
-                            if (finalUrl) out = finalUrl;
-                        } catch (e) {
-                            // resolution is best-effort; the original link still downloads
-                        }
-                        Swal.close();
-                        base.setClipboard(out);
-                        message.success('链接已复制到剪贴板');
-                    } else if (result.dismiss === 'cancel') {
-                        let iframe = document.getElementById('downloadIframe');
-                        if (iframe) iframe.src = href;
-                        else $('#downloadIframe').attr('src', href);
-                    }
-                });
+                // ponytail: click == download. No resolution probe (a HEAD plus a ranged-GET
+                // fallback used to stall every click) and no intermediate dialog — the iframe
+                // follows the redirect itself. Right-click still copies the link, so the
+                // clipboard path stays available for when you need the URL itself.
+                let iframe = document.getElementById('downloadIframe');
+                if (iframe) iframe.src = href;
+                else $('#downloadIframe').attr('src', href);
+            });
+            // ponytail: right-click on the link copies it, keeping the clipboard path available
+            // now that a plain click downloads directly.
+            doc.on('contextmenu', '.listener-link-api.browser', async (e) => {
+                e.preventDefault();
+                let href = e.currentTarget.dataset.link;
+                if (!/^https?:/.test(href)) return;
+                let out = href;
+                try {
+                    const finalUrl = await base.getFinalUrl(href, { Referer: location.origin });
+                    if (finalUrl) out = finalUrl;
+                } catch (err) { /* best-effort; the raw link still works */ }
+                base.setClipboard(out);
+                message.success('链接已复制到剪贴板');
             });
             doc.on('click', '.listener-link-api.blob', async (e) => {
                             e.preventDefault();

@@ -856,10 +856,15 @@
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
             button.pl-item-btn { background: ${color} !important; padding: 4px 5px !important; border-radius: 4px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
+            .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
             button.pl-item-btn:hover { opacity: 0.9; }
             button.pl-item-btn:active { filter: brightness(.9); }
             button.pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
             button.pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
+            .pl-item-btn:hover { opacity: 0.9; }
+            .pl-item-btn:active { filter: brightness(.9); }
+            .pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
+            .pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
             .pl-item-tip { display: flex; justify-content: space-between; flex: 1; }
             .pl-back { width: 70px; background: #f5f6f7; border-radius: 4px; cursor: pointer; margin: 1px 0; transition: background 180ms ease; }
             .pl-back:hover { background: #e6e8eb; }
@@ -1556,7 +1561,10 @@
             // so the lazy fix is a copy here rather than hoisting a shared registration.
             doc.on('click', '.listener-link-api-btn', async (e) => {
                 base.setClipboard(e.target.dataset.filename);
-                $(e.target).text('复制成功').animate({opacity: '0.5'}, "slow");
+                const $btn = $(e.target);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制文件名', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
             });
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
@@ -2249,7 +2257,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-link-api-btn', async (e) => {
                 base.setClipboard(e.target.dataset.filename);
-                $(e.target).text('复制成功').animate({opacity: '0.5'}, "slow");
+                const $btn = $(e.target);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制文件名', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
             });
             doc.on('click', '.listener-link-bc-btn', async (e) => {
                 let mirror = base.getMirrorList(e.target.dataset.dlink, pan.mirror);

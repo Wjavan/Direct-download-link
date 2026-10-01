@@ -67,6 +67,9 @@
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
 
+    // ponytail: true while rendering the enhanced-download dialog, which omits 直接下载 so the
+    // user isn't offered the browser path after already choosing the cross-origin one.
+    let enhanceView = false;
     let watched = {};
     const customClass = {
         popup: 'pl-popup',
@@ -1582,6 +1585,9 @@
             }
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
+                        // ponytail: reset here, not in the blob handler — picking any mode from the
+                        // dropdown re-enters the normal dialog, so 直接下载 must come back.
+                        enhanceView = false;
                         Swal.showLoading();
                         try {
                             await this.getPCSLink();
@@ -1635,57 +1641,65 @@
             });
             // 增强下载 = 脚本跨域请求（多线程分片，不支持时降级为单流），带进度条。
                         // 直接下载 = 浏览器 iframe 访问链接。二者是 LinkSwift 的原始分工。
-                        doc.on('click', '.listener-link-api.blob', async (e) => {
-                            e.preventDefault();
-                            let o = _factory(e);
-                            let href = e.currentTarget.dataset.link;
-                            let filename = e.currentTarget.dataset.filename;
-                            let index = e.currentTarget.dataset.index;
-                            // getPCSLink already resolved download_url into data-link; re-requesting it here
-                            // hung GM_xmlhttpRequest, so trust data-link.
-                            if (!href) {
-                                return message.error('提示：未获取到下载链接，请刷新页面后重试！');
-                            }
-                            _reset(index);
-                            // ponytail: _factory's .link is item.find('.pl-item-link'), which matches BOTH
-                            // buttons — hiding o.link would hide 直接下载 too and never restore it. Target just
-                            // the clicked button, and restore both on the way out.
-                            $(e.currentTarget).hide();
-                            o.tip.hide();
-                            o.progress.show();
-                            o.item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
-                            // ponytail: ali's config has no ua, so send the Referer its CDN checks instead of
-                            // baidu's User-Agent. download() chunks when the CDN allows Range and falls back
-                            // to a single stream when it does not, so this works either way.
-                            base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
-                                clearInterval(ins[index]);
-                                o.item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
-                                o.item.find('.pl-progress-inner').css('width', '0%');
-                                o.item.find('.pl-progress-inner-text').text('0%');
-                                // ponytail: capture the timer this failure belongs to — a user can click again
-                                // before it fires, and an uncaptured restore would stomp the new download's UI.
-                                const failed = ins[index];
-                                setTimeout(() => {
-                                    if (ins[index] === failed) {
-                                        o.progress.hide();
-                                        o.item.find('.pl-item-link').show();
-                                    }
-                                }, 3000);
-                            });
-                            ins[index] = setInterval(() => {
-                                let prog = +progress[index] || 0;
-                                o.item.find('.pl-progress-inner').css('width', prog + '%');
-                                o.item.find('.pl-progress-inner-text').text(prog + '%');
-                                if (prog >= 100) {
-                                                                    clearInterval(ins[index]);
-                                                                    o.item.find('.pl-progress-tip').text('下载完成，已弹出保存框！');
-                                    setTimeout(() => {
-                                        o.progress.hide();
-                                        o.item.find('.pl-item-link').show();
-                                    }, 2500);
-                                }
-                            }, 500);
-                        });
+            // 增强下载 opens its own dialog: same rows as the API dialog minus 直接下载, because
+            // the user already picked the cross-origin path. Clicking 增强下载 *inside* that
+            // dialog is what actually starts the download.
+            doc.on('click', '.listener-link-api.blob', async (e) => {
+                e.preventDefault();
+                if (!enhanceView) {
+                    enhanceView = true;
+                    Swal.close();
+                    this.showMainDialog('增强下载（脚本跨域请求）', this.generateDom(selectList), pan.api[1]);
+                    return;
+                }
+                let o = _factory(e);
+                let href = e.currentTarget.dataset.link;
+                let filename = e.currentTarget.dataset.filename;
+                let index = e.currentTarget.dataset.index;
+                // getPCSLink already resolved download_url into data-link; re-requesting it here
+                // hung GM_xmlhttpRequest, so trust data-link.
+                if (!href) {
+                    return message.error('提示：未获取到下载链接，请刷新页面后重试！');
+                }
+                _reset(index);
+                // ponytail: _factory's .link is item.find('.pl-item-link'), which matches every
+                // button in the row — hide only the clicked one and restore them all on exit.
+                $(e.currentTarget).hide();
+                o.tip.hide();
+                o.progress.show();
+                o.item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
+                // ali's config has no ua, so send the Referer its CDN checks instead of baidu's
+                // User-Agent. download() chunks when the CDN allows Range and falls back to a
+                // single stream when it does not, so this works either way.
+                base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
+                    clearInterval(ins[index]);
+                    o.item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
+                    o.item.find('.pl-progress-inner').css('width', '0%');
+                    o.item.find('.pl-progress-inner-text').text('0%');
+                    // ponytail: capture the timer this failure belongs to — a user can click again
+                    // before it fires, and an uncaptured restore would stomp the new download's UI.
+                    const failed = ins[index];
+                    setTimeout(() => {
+                        if (ins[index] === failed) {
+                            o.progress.hide();
+                            o.item.find('.pl-item-link').show();
+                        }
+                    }, 3000);
+                });
+                ins[index] = setInterval(() => {
+                    let prog = +progress[index] || 0;
+                    o.item.find('.pl-progress-inner').css('width', prog + '%');
+                    o.item.find('.pl-progress-inner-text').text(prog + '%');
+                    if (prog >= 100) {
+                        clearInterval(ins[index]);
+                        o.item.find('.pl-progress-tip').text('下载完成，已弹出保存框！');
+                        setTimeout(() => {
+                            o.progress.hide();
+                            o.item.find('.pl-item-link').show();
+                        }, 2500);
+                    }
+                }, 500);
+            });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
                 try { base.setClipboard(decodeURIComponent(e.target.dataset.link)); } catch(e) { base.setClipboard(e.target.dataset.link); }
@@ -1834,23 +1848,26 @@
                 let did = v.driveId;
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
-                if (mode === 'api') {
-                    content += `<div class="pl-item">
-                                <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>
-                                <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
-                                <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
-                                <div class="pl-item-progress" style="display: none">
-                                    <div class="pl-progress">
-                                        <div class="pl-progress-outer"></div>
-                                        <div class="pl-progress-inner" style="width:0%">
-                                          <div class="pl-progress-inner-text">0%</div>
-                                        </div>
-                                    </div>
-                                    <span class="pl-progress-tip">正在下载…</span>
-                                </div>
-                                </div>`;
-                }
+                                if (mode === 'api') {
+                                    // ponytail: enhanceView drops 直接下载 so the enhanced-download dialog offers
+                                    // only the cross-origin path — the user already chose it, and keeping the
+                                    // browser button there would make the two dialogs identical.
+                                    content += `<div class="pl-item">
+                                                <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
+                                                ${enhanceView ? '' : `<button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>`}
+                                                <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
+                                                <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
+                                                <div class="pl-item-progress" style="display: none">
+                                                    <div class="pl-progress">
+                                                        <div class="pl-progress-outer"></div>
+                                                        <div class="pl-progress-inner" style="width:0%">
+                                                          <div class="pl-progress-inner-text">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <span class="pl-progress-tip">正在下载…</span>
+                                                </div>
+                                                </div>`;
+                                }
                 if (mode === 'aria') {
                     let alink = this.convertLinkToAria(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';

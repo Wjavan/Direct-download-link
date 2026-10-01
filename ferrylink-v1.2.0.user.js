@@ -849,7 +849,7 @@
             .pl-content { padding: 0 !important; font-size: 12px !important; }
             .pl-main { max-height: 400px; overflow-y: scroll; }
             .pl-footer { font-size: 12px !important; justify-content: flex-start !important; margin: 10px 0 0 !important; padding: 5px 0 0 !important; color: #cc3235 !important; }
-            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; }
+            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; gap: 6px; }
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }

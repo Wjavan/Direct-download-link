@@ -1970,7 +1970,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
             // ponytail: use substring match instead of === because tianyi's upload button
             // text may include icon text or other descendants, so exact match fails and we
             // fall back to container.firstChild (wrong position, next to 开通会员).
-            let candidates = container.querySelectorAll('a, button, span, em, i');
+            let candidates = container.querySelectorAll('a, button, div, span, em, i');
             for (let el of candidates) {
                 let text = (el.innerText || el.textContent || '').trim();
                 if (text.includes('上传')) {

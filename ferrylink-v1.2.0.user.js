@@ -564,6 +564,7 @@
             dom += `</select></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">主题颜色</div> <div class="pl-color">${btn}<div></label>`;
             dom = '<div>' + dom + '</div>';
+            console.log('[showSetting] dom length:', dom.length, 'first 100 chars:', dom.slice(0,100));
                                                 Swal.fire({
                                                     title: '助手配置',
                                                     html: dom,

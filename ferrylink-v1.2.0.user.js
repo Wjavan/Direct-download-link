@@ -583,12 +583,13 @@
                                                             if (container) {
                                                                     container.style.setProperty('z-index', '2147483647', 'important');
                                                                     container.style.setProperty('position', 'fixed', 'important');
-                                                                    console.log('[showSetting] container rect:', container.getBoundingClientRect());
+                                                                    container.style.setProperty('top', '50%', 'important');
+                                                                    container.style.setProperty('left', '50%', 'important');
+                                                                    container.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
                                                             }
                                                             if (popup) {
                                                                     popup.style.setProperty('z-index', '2147483647', 'important');
-                                                                    popup.style.setProperty('position', 'relative', 'important');
-                                                                    console.log('[showSetting] popup rect:', popup.getBoundingClientRect());
+                                                                    popup.style.setProperty('position', 'fixed', 'important');
                                                             }
                                                     },
                                                 }).then(() => {

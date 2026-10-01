@@ -392,6 +392,39 @@
                         });
                     });
                 },
+        // ponytail: fallback for a CDN that refuses Range (aliyundrive 403s the probe).
+                // One plain GET streamed whole into a Blob and saved — no chunking, no progress
+                // by percentage (the server may omit Content-Length), but it completes. Mirrors
+                // LinkSwift, which falls back to a single stream instead of erroring.
+                downloadSingleStream(url, headers, extra) {
+                    const key = 'single_' + Date.now();
+                    const idx = extra && extra.index;
+                    return new Promise((resolve, reject) => {
+                        const clear = () => { delete request[key]; };
+                        request[key] = GM_xmlhttpRequest({
+                            method: "GET", url,
+                            headers,
+                            responseType: 'blob',
+                            timeout: 0,
+                            ontimeout: () => { clear(); reject(new Error('下载超时')); },
+                            onprogress: (res) => {
+                                if (idx == null) return;
+                                progress[idx] = res.total > 0 ? Math.min(99, Math.floor(res.loaded * 100 / res.total)) : 0;
+                            },
+                            onload: (res) => {
+                                clear();
+                                if (res.status >= 400) {
+                                    reject(new Error('下载失败（HTTP ' + res.status + '）'));
+                                    return;
+                                }
+                                this.blobDownload(res.response, extra && extra.filename);
+                                if (idx != null) progress[idx] = 100;
+                                resolve({ status: res.status });
+                            },
+                            onerror: () => { clear(); reject(new Error('下载请求出错')); },
+                        });
+                    });
+                },
         download(url, headers, extra) {
                     // ponytail: concurrency is capped by the pan CDN, not by GM_xmlhttpRequest.
                     // Measured against a real baidu dlink (8.9MB pdf, 9x1MB ranges):
@@ -401,9 +434,14 @@
                     // Baidu throttles concurrent ranged GETs on one signed URL, so 2 is the cap.
             const THREADS = 2, CHUNK = 1024 * 1024, MAX = 1024 * 1024 * 1024;
             return this.rangeSupported(url, headers).then(async (probe) => {
-                if (!probe.ok || !probe.size) {
-                    throw new Error('该链接不支持分片下载（Range 请求被拒绝），请使用 "Aria下载" 或 "RPC下载" 推送给外部下载器');
-                }
+                            if (!probe.ok || !probe.size) {
+                                // ponytail: a CDN that refuses Range is not a dead end — LinkSwift handles
+                                // this exact case by falling back to a single-stream download instead of
+                                // erroring. We threw here, which made 增强下载 useless on aliyundrive (its
+                                // CDN 403s the probe) and left it identical to 直接下载 once the button was
+                                // wired to the iframe. Single GET it is: no chunking, no Range, but it works.
+                                return this.downloadSingleStream(url, headers, extra);
+                            }
                 if (probe.size > MAX) {
                     throw new Error('文件过大（' + Math.round(probe.size / 1048576) + 'MB），浏览器内存与链接时效不支持，请用 Aria2/RPC 外部下载');
                 }
@@ -1595,20 +1633,59 @@
                 o.tip.hide();
                 o.link.show();
             });
-            // Both buttons hand the URL to the hidden iframe. The blob path used to call
-            // base.download() (Range-chunked, script-streamed), but ali's CDN rejects Range —
-            // every click ended in '该链接不支持分片下载'. Verified: the probe returns 403, so no
-            // chunked path exists here. Keeping 增强下载 as a second entry point to the same
-            // iframe keeps the UI the user knows while dropping the path that cannot work.
-            doc.on('click', '.listener-link-api.blob', async (e) => {
-                e.preventDefault();
-                let href = e.currentTarget.dataset.link;
-                if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
-                let iframe = document.getElementById('downloadIframe');
-                if (iframe) iframe.src = href;
-                else $('#downloadIframe').attr('src', href);
-                message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
-            });
+            // 增强下载 = 脚本跨域请求（多线程分片，不支持时降级为单流），带进度条。
+                        // 直接下载 = 浏览器 iframe 访问链接。二者是 LinkSwift 的原始分工。
+                        doc.on('click', '.listener-link-api.blob', async (e) => {
+                            e.preventDefault();
+                            let o = _factory(e);
+                            let href = e.currentTarget.dataset.link;
+                            let filename = e.currentTarget.dataset.filename;
+                            let index = e.currentTarget.dataset.index;
+                            // getPCSLink already resolved download_url into data-link; re-requesting it here
+                            // hung GM_xmlhttpRequest, so trust data-link.
+                            if (!href) {
+                                return message.error('提示：未获取到下载链接，请刷新页面后重试！');
+                            }
+                            _reset(index);
+                            // ponytail: _factory's .link is item.find('.pl-item-link'), which matches BOTH
+                            // buttons — hiding o.link would hide 直接下载 too and never restore it. Target just
+                            // the clicked button, and restore both on the way out.
+                            $(e.currentTarget).hide();
+                            o.tip.hide();
+                            o.progress.show();
+                            o.item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
+                            // ponytail: ali's config has no ua, so send the Referer its CDN checks instead of
+                            // baidu's User-Agent. download() chunks when the CDN allows Range and falls back
+                            // to a single stream when it does not, so this works either way.
+                            base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
+                                clearInterval(ins[index]);
+                                o.item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
+                                o.item.find('.pl-progress-inner').css('width', '0%');
+                                o.item.find('.pl-progress-inner-text').text('0%');
+                                // ponytail: capture the timer this failure belongs to — a user can click again
+                                // before it fires, and an uncaptured restore would stomp the new download's UI.
+                                const failed = ins[index];
+                                setTimeout(() => {
+                                    if (ins[index] === failed) {
+                                        o.progress.hide();
+                                        o.item.find('.pl-item-link').show();
+                                    }
+                                }, 3000);
+                            });
+                            ins[index] = setInterval(() => {
+                                let prog = +progress[index] || 0;
+                                o.item.find('.pl-progress-inner').css('width', prog + '%');
+                                o.item.find('.pl-progress-inner-text').text(prog + '%');
+                                if (prog >= 100) {
+                                                                    clearInterval(ins[index]);
+                                                                    o.item.find('.pl-progress-tip').text('下载完成，已弹出保存框！');
+                                    setTimeout(() => {
+                                        o.progress.hide();
+                                        o.item.find('.pl-item-link').show();
+                                    }, 2500);
+                                }
+                            }, 500);
+                        });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
                 try { base.setClipboard(decodeURIComponent(e.target.dataset.link)); } catch(e) { base.setClipboard(e.target.dataset.link); }

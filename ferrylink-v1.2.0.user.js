@@ -768,19 +768,8 @@
                 // seq, request kind 13, flags 1, 10241 (use the file info we supply),
                 // an offset that must exceed seq, 0, timestamp, 0, 1, 2 (fetch info from the
                 // server), file size, then the field list.
-                // ponytail: jQuery's .data() hands back a STRING, and a float or 1e+10-style value
-                // would land verbatim in the envelope and make IDM reject the whole message. Force a
-                // non-negative integer; 0 means "size unknown", which IDM tolerates (it queries the
-                // server), but a wrong or non-numeric number is not.
-                const sizeNum = Math.max(0, Math.floor(Number(filesize) || 0));
-                // ponytail: 10241 tells IDM to trust the file info we supply. For a pan-reported size
-                // that turns out to be wrong (xunlei's web_content_link occasionally reports a
-                // stale v.size), IDM sizes the task from that number and then errors the moment the
-                // real byte count disagrees — "an error occurred during the download", with the
-                // dialog still showing the right filename. 20480 is the same field's other legal
-                // value: keep the filename and extension we pass, but let IDM fetch the size from
-                // the server. A wrong number now costs one extra request instead of the download.
-                const data = `MSG#${seq}#13#1#20480:${seq + 1000}:0:${time}:0:1:2:${sizeNum}:0,${fields.join(',')};`;
+                // ponytail: 10241 + size=0 is the only combination that actually downloaded.
+                const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:0:0,${fields.join(',')};`;
                 // ponytail: no abort() here. LinkSwift's base.post returns the raw
                 // GM_xmlhttpRequest so it can cancel; ours returns a Promise, so the request
                 // simply keeps running until its own 30s timeout. Racing is still correct — the

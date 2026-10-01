@@ -2010,11 +2010,22 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     }
                 });
                 console.log('[tianyi] elements with 上传:', allElements.join('; '));
+                // Find the most specific upload button element (exclude document-level nodes)
                 var uploadBtn = null;
+                var uploadDepth = 999;
                 document.querySelectorAll('*').forEach(function(el){
                     var t = (el.textContent||'').trim();
-                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea') && !uploadBtn) {
-                        uploadBtn = el;
+                    if (t.indexOf('上传')>=0 && !el.closest('.nav-opea')) {
+                        // Skip document-level elements and elements with too much text (likely containers)
+                        if (['HTML','BODY','HEAD'].indexOf(el.tagName)>=0) return;
+                        if (t.length > 50) return; // too much text = likely not the button itself
+                        var depth = 0;
+                        var p = el;
+                        while(p.parentElement){ depth++; p=p.parentElement; }
+                        if (depth < uploadDepth) {
+                            uploadDepth = depth;
+                            uploadBtn = el;
+                        }
                     }
                 });
                 if (uploadBtn) {

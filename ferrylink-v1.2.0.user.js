@@ -775,6 +775,13 @@
                     GM_xmlhttpRequest({
                         method: "POST", url, data,
                         headers: { "Content-Type": "text/plain" },
+                        // ponytail: withCredentials is the missing piece. LinkSwift's
+                        // xmlHttpRequest wrapper forces { withCredentials: true } on every
+                        // request, and IDM's capture endpoint silently drops the request
+                        // without it — 15s timeout, no reply, every time. The credential
+                        // itself is irrelevant (localhost, no cookies), but IDM's listener
+                        // appears to gate on the CORS cred flag before responding.
+                        withCredentials: true,
                         timeout: 15000,
                         onload: (r) => { console.log('[FerryLink IDM] onload', { status: r.status, statusText: r.statusText, responseText: (r.responseText||'').slice(0,200), response: String(r.response||'').slice(0,200) }); resolve(r.responseText || r.response || ''); },
                         ontimeout: () => { console.log('[FerryLink IDM] ontimeout (15s)'); resolve(''); },

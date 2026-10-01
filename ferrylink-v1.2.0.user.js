@@ -776,9 +776,9 @@
                         method: "POST", url, data,
                         headers: { "Content-Type": "text/plain" },
                         timeout: 15000,
-                        onload: (r) => resolve(r.responseText || r.response || ''),
-                        ontimeout: () => resolve(''),
-                        onerror: () => resolve(''),
+                        onload: (r) => { console.log('[FerryLink IDM] onload', { status: r.status, statusText: r.statusText, responseText: (r.responseText||'').slice(0,200), response: String(r.response||'').slice(0,200) }); resolve(r.responseText || r.response || ''); },
+                        ontimeout: () => { console.log('[FerryLink IDM] ontimeout (15s)'); resolve(''); },
+                        onerror: (e) => { console.log('[FerryLink IDM] onerror', { error: String(e.error||e), readyState: e.readyState, status: e.status, finalUrl: e.finalUrl }); resolve(''); },
                     });
                 });
                 const res = raw || false;

@@ -2021,8 +2021,15 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     found = true;
                     var parent = uploadBtn.parentElement;
                     if (parent) {
-                        parent.insertBefore($button[0], uploadBtn);
-                        console.log('[tianyi] relocated before:', uploadBtn.tagName, uploadBtn.className.slice(0,30), '|', t.slice(0,15));
+                        // Insert before the upload dropdown container (at the same level as 新建文件夹 etc.)
+                        // Find the common parent that holds both upload and other action buttons
+                        var actionBar = uploadBtn.closest('.FileHead_file-head-upload, .cloud-file, [class*="file-head"]');
+                        if (actionBar && actionBar.firstChild) {
+                            actionBar.insertBefore($button[0], actionBar.firstChild);
+                        } else if (parent) {
+                            parent.insertBefore($button[0], uploadBtn);
+                        }
+                        console.log('[tianyi] relocated before:', uploadBtn.tagName, uploadBtn.className.slice(0,30), '|', (uploadBtn.textContent||'').trim().slice(0,15));
                     }
                     return;
                 }

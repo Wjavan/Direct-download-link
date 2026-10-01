@@ -404,28 +404,46 @@
                     const idx = extra && extra.index;
                     return new Promise((resolve, reject) => {
                         const clear = () => { delete request[key]; };
-                        request[key] = GM_xmlhttpRequest({
+                        const req = GM_xmlhttpRequest({
                             method: "GET", url,
                             headers,
-                            responseType: 'blob',
+                            responseType: 'stream',
                             timeout: 0,
                             ontimeout: () => { clear(); reject(new Error('下载超时')); },
-                            onprogress: (res) => {
-                                if (idx == null) return;
-                                progress[idx] = res.total > 0 ? Math.min(99, Math.floor(res.loaded * 100 / res.total)) : 0;
-                            },
-                            onload: (res) => {
+                            onload: async (res) => {
                                 clear();
                                 if (res.status >= 400) {
                                     reject(new Error('下载失败（HTTP ' + res.status + '）'));
                                     return;
                                 }
-                                this.blobDownload(res.response, extra && extra.filename);
-                                if (idx != null) progress[idx] = 100;
-                                resolve({ status: res.status });
+                                try {
+                                    // ponytail: responseType:'stream' lets the save dialog open at the
+                                    // START of the download instead of after the whole body is buffered.
+                                    // With 'blob' the page downloaded at full speed into memory and the
+                                    // user watched a frozen 0% for minutes — the slowness was ours, not
+                                    // the CDN. chunked() keeps memory flat and reports real totals.
+                                    const reader = res.response.getReader();
+                                    const total = +res.response.headers.get('content-length') || 0;
+                                    let loaded = 0;
+                                    const parts = [];
+                                    for (;;) {
+                                        const { done, value } = await reader.read();
+                                        if (done) break;
+                                        parts.push(value);
+                                        loaded += value.byteLength;
+                                        if (idx != null) progress[idx] = total > 0
+                                            ? Math.min(99, Math.floor(loaded * 100 / total)) : 0;
+                                    }
+                                    if (idx != null) progress[idx] = 100;
+                                    this.blobDownload(new Blob(parts), extra && extra.filename);
+                                    resolve({ status: res.status });
+                                } catch (e) {
+                                    reject(new Error('下载中断：' + (e && e.message || '未知错误')));
+                                }
                             },
                             onerror: () => { clear(); reject(new Error('下载请求出错')); },
                         });
+                        request[key] = req;
                     });
                 },
         download(url, headers, extra) {

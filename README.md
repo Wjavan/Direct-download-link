@@ -65,14 +65,13 @@
 该 API 为 Tampermonkey 独有。在 Violentmonkey / Greasemonkey 下：
 - 阿里 / 天翼 / 迅雷 / 夸克 / 移动：**功能完整**
 - 百度：BDUSS 读取降级，**Aria / cURL / BC 导出的命令不带 Cookie，直链下载会返回 403**。
-  百度请改用「直接下载」或「增强下载（文件流）」。
+  百度请改用「直接下载」（浏览器内置下载）。
 
 ### 下载器（仅在使用对应方式时需要）
 
 | 方式 | 前置条件 |
 |------|---------|
 | API 下载 → 直接下载 | 无（浏览器内置） |
-| API 下载 → 增强下载（文件流） | 无（浏览器内置，文件需 ≤1GB 且支持 Range） |
 | Aria 下载 | 自行安装 aria2，命令粘贴到终端执行 |
 | cURL 下载 | 系统已安装 curl |
 | BC 下载 | 自行安装比特彗星 |
@@ -115,6 +114,7 @@ aria2c --enable-rpc --rpc-listen-all --rpc-listen-port=6800 --rpc-secret=YOUR_SE
 | `GM_getValue` / `GM_setValue` / `GM_deleteValue` | 保存 RPC 配置与登录态 |
 | `GM_registerMenuCommand` | 右键菜单「设置」入口 |
 | `GM_cookie` | 读取百度 `BDUSS`（仅百度需要） |
+| `GM_openInTab` | 百度令牌获取时打开授权页 |
 | `window.close` | 百度 OAuth 授权完成后关闭授权窗口 |
 
 ---
@@ -122,9 +122,8 @@ aria2c --enable-rpc --rpc-listen-all --rpc-listen-port=6800 --rpc-secret=YOUR_SE
 ## 功能
 
 - 个人主页 / 文件夹页：勾选文件 → 一键获取直链
-- 6 种下载方式：API（直接下载 / 增强文件流）、Aria2、cURL、RPC（aria2/Motrix）、比特彗星、IDM（浏览器集成）
+- 6 种下载方式：API（浏览器直接下载 / IDM 推送）、Aria2、cURL、RPC（aria2/Motrix）、比特彗星
 - 多文件批量选择与批量推送
-- 分片并发下载（增强下载），6 线程，带完整性校验
 - RPC 主机白名单与文件名净化，防止路径穿越
 - 深链弹出、链接一键复制
 - 主题色自定义

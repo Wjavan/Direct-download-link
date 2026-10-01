@@ -317,19 +317,6 @@
             let l = md5(a + ":" + n);
             return md5(A + l).toUpperCase();
         },
-        headersObj(res) {
-            const raw = res && res.responseHeaders;
-            const out = {};
-            if (raw && typeof raw === 'object') {
-                for (const k of Object.keys(raw)) out[k.toLowerCase()] = raw[k];
-            } else if (raw) {
-                for (const line of String(raw).split(/\r?\n/)) {
-                    const i = line.indexOf(':');
-                    if (i > 0) out[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim();
-                }
-            }
-            return out;
-        },
         _resetData() {
                     progress = {};
                     $.each(request, (key) => {
@@ -564,7 +551,6 @@
             dom += `</select></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">主题颜色</div> <div class="pl-color">${btn}<div></label>`;
             dom = '<div>' + dom + '</div>';
-            console.log('[showSetting] dom length:', dom.length, 'first 100 chars:', dom.slice(0,100));
                                                 Swal.fire({
                                                     title: '助手配置',
                                                     html: dom,
@@ -1039,17 +1025,6 @@
     };
 
     let baidu = {
-        _getExtra() {
-            let seKey = decodeURIComponent(base.getCookie('BDCLND'));
-            return '{' + '"sekey":"' + seKey + '"' + "}";
-        },
-        _getSurl() {
-            let reg = /(?<=s\/|surl=)([a-zA-Z0-9_-]+)/g;
-            if (reg.test(location.href)) {
-                return location.href.match(reg)[0];
-            }
-            return '';
-        },
         _getFidList() {
             let fidlist = [];
             selectList.forEach(v => {
@@ -1384,8 +1359,8 @@
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${filename}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
                                 <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div></div>`;
                 }
                 if (mode === 'aria') {
@@ -1393,30 +1368,30 @@
                     if (typeof (alink) === 'object') {
                         content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a" target="_blank" rel="noreferrer noopener" href="${base.safeHttpUrl(alink.link)}" data-filename="${filename}" data-link="${base.safeHttpUrl(alink.link)}">${base.esc(decodeURIComponent(alink.text))}</a> </div>`;
+                                <a class="pl-item-link pl-a" target="_blank" rel="noreferrer noopener" href="${base.safeHttpUrl(alink.link)}" data-filename="${base.esc(filename)}" data-link="${base.safeHttpUrl(alink.link)}">${base.esc(decodeURIComponent(alink.text))}</a> </div>`;
                     } else {
                         alinkAllText += alink + '\r\n';
                         content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link pl-a listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                     }
                 }
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
+                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, pan.ua);
                     if (typeof (alink) === 'object') {
                         content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a" target="_blank" rel="noreferrer noopener" href="${base.safeHttpUrl(alink.link)}" data-filename="${filename}" data-link="${base.safeHttpUrl(alink.link)}">${base.esc(decodeURIComponent(alink.text))}</a> </div>`;
+                                <a class="pl-item-link pl-a" target="_blank" rel="noreferrer noopener" href="${base.safeHttpUrl(alink.link)}" data-filename="${base.esc(filename)}" data-link="${base.safeHttpUrl(alink.link)}">${base.esc(decodeURIComponent(alink.text))}</a> </div>`;
                     } else {
                         alinkAllText += alink + '\r\n';
                         content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link pl-a listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                     }
                 }
                 if (mode === 'bc') {
@@ -1424,23 +1399,23 @@
                     if (typeof (alink) === 'object') {
                         content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a" target="_blank" rel="noreferrer noopener" href="${base.safeHttpUrl(alink.link)}" data-filename="${filename}" data-link="${base.safeHttpUrl(alink.link)}">${base.esc(decodeURIComponent(alink.text))}</a> </div>`;
+                                <a class="pl-item-link pl-a" target="_blank" rel="noreferrer noopener" href="${base.safeHttpUrl(alink.link)}" data-filename="${base.esc(filename)}" data-link="${base.safeHttpUrl(alink.link)}">${base.esc(decodeURIComponent(alink.text))}</a> </div>`;
                     } else {
                         content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link pl-a" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                     }
                 }
             });
             content += '</div>';
             if (mode === 'aria')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
             if (mode === 'curl')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
             return content;
         },
         async sendLinkToRPC(filename, link) {
@@ -1487,10 +1462,6 @@
                 let pan = document.querySelector('.wp-s-core-pan');
                 return pan && pan.__vue__ ? pan.__vue__.selectedList : [];
             }
-        },
-        getLogid() {
-            let ut = require("system-core:context/context.js").instanceForSystem.tools.baseService;
-            return ut.base64Encode(base.getCookie("BAIDUID"));
         },
         detectPage() {
             let path = location.pathname;
@@ -1755,9 +1726,9 @@
                                 if (mode === 'api') {
                                     content += `<div class="pl-item">
                                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${filename}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
-                                                <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制文件名</div>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+                                                <div class="pl-item-btn listener-link-api-btn" data-filename="${base.esc(filename)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制文件名</div>
                                                 </div>`;
                                 }
                 if (mode === 'aria') {
@@ -1765,36 +1736,36 @@
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
+                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'bc') {
                     let alink = this.convertLinkToBC(dlink, filename, navigator.userAgent);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
             });
             content += '</div>';
             if (mode === 'aria')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
             if (mode === 'curl')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
             return content;
         },
         async sendLinkToRPC(filename, link) {
@@ -2105,8 +2076,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${filename}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+                                <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -2114,36 +2085,36 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
+                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'bc') {
                     let alink = this.convertLinkToBC(dlink, filename, navigator.userAgent);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
             });
             content += '</div>';
             if (mode === 'aria')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
             if (mode === 'curl')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
             return content;
         },
         async sendLinkToRPC(filename, link) {
@@ -2502,10 +2473,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                    <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                    <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${filename}" data-filesize="${+v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
-                                    ${v.mediaLink ? `<button class="pl-item-link listener-link-media pl-btn-primary" data-filename="${filename}" data-link="${v.mediaLink}" data-index="${i}">云播转码下载(更小更快)</button>` : ''}
-                                    <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制文件名</div>
+                                    <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                    <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${+v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+                                    ${v.mediaLink ? `<button class="pl-item-link listener-link-media pl-btn-primary" data-filename="${base.esc(filename)}" data-link="${base.esc(v.mediaLink)}" data-index="${i}">云播转码下载(更小更快)</button>` : ''}
+                                    <div class="pl-item-btn listener-link-api-btn" data-filename="${base.esc(filename)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制文件名</div>
                                     </div>`;
                 }
                 if (mode === 'aria') {
@@ -2513,38 +2484,38 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                    <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                    <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                    <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
+                                    <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                    <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                    <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'bc') {
                     let alink = this.convertLinkToBC(dlink, filename, navigator.userAgent);
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                    <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a>
+                                    <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a>
                                     <div class="pl-item-btn listener-link-bc-btn" data-dlink="${dlink}">复制镜像地址</div>
                                     </div>`;
                 }
             });
             content += '</div>';
             if (mode === 'aria')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
             if (mode === 'curl')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
             return content;
         },
         async sendLinkToRPC(filename, link) {
@@ -2819,8 +2790,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-api" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${filename}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+                                <a class="pl-item-link listener-link-api" data-fid="${fid}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -2828,36 +2799,36 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
+                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'bc') {
                     let alink = this.convertLinkToBC(dlink, filename, navigator.userAgent);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
             });
             content += '</div>';
             if (mode === 'aria')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
             if (mode === 'curl')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
             return content;
         },
         async sendLinkToRPC(filename, link) {
@@ -3138,8 +3109,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
-                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${filename}" data-filesize="${(v.contentSize || v.coSize)}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+                                <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${(v.contentSize || v.coSize)}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -3147,36 +3118,36 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制aria2c链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'rpc') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
+                                <button class="pl-item-link listener-link-rpc pl-btn-primary pl-btn-info" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><em class="icon icon-device"></em><span style="margin-left: 5px;">推送到 RPC 下载器</span></button></div>`;
                 }
                 if (mode === 'curl') {
                     let alink = this.convertLinkToCurl(dlink, filename, navigator.userAgent);
                     alinkAllText += alink + '\r\n';
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link listener-link-aria" href="${base.esc(alink)}" title="点击复制curl链接" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
                 if (mode === 'bc') {
                     let alink = this.convertLinkToBC(dlink, filename, navigator.userAgent);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${filename}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
+                                <a class="pl-item-link" href="${base.esc(decodeURIComponent(alink))}" title="点击用比特彗星下载" data-filename="${base.esc(filename)}" data-link="${base.esc(alink)}">${base.esc(decodeURIComponent(alink))}</a> </div>`;
                 }
             });
             content += '</div>';
             if (mode === 'aria')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button></div>`;
             if (mode === 'rpc') {
                 let rpc = base.getValue('setting_rpc_domain') + ':' + base.getValue('setting_rpc_port') + base.getValue('setting_rpc_path');
                 content += `<div class="pl-extra"><button class="pl-btn-primary listener-send-rpc"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>发送全部链接</button><button title="${rpc}" class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置 RPC 参数（当前为：${rpc}）</button></div>`;
             }
             if (mode === 'curl')
-                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${alinkAllText}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
+                content += `<div class="pl-extra"><button class="pl-btn-primary listener-copy-all" data-link="${base.esc(alinkAllText)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制全部链接</button><button class="pl-btn-primary pl-btn-warning listener-open-setting" style="margin-left: 10px;"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置终端类型（当前为：${terminalType[base.getValue('setting_terminal_type')] || '未知'}）</button></div>`;
             return content;
         },
         async sendLinkToRPC(filename, link) {

@@ -648,12 +648,9 @@
                 btn.attr('data-processing', 'true');
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
-                // ponytail: no custom headers for xunlei — LinkSwift calls sendLinkToIDM(link,
-                // filename, filesize) with no fourth arg at all. The standHeaders default
-                // (UA + Origin + Referer) still applies; adding a custom Referer on top was the
-                // only divergence, and it may have been the reason IDM's capture rejected the
-                // task after accepting it (the download would start then fail).
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize'));
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, {
+                    "Referer": location.origin + '/'
+                });
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -777,7 +774,7 @@
                 // socket for a few seconds.
                 const post = base.post(url, data, {}, 'text').catch(() => false);
                 const timeout = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('timeout')), 5000);
+                    setTimeout(() => reject(new Error('timeout')), 15000);
                 });
                 const res = await Promise.race([post, timeout]).catch(() => false);
                 // ponytail: seq MUST advance on failure too. IDM treats a repeated seq as a

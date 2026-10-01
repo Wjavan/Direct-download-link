@@ -22,6 +22,7 @@
 // @require           https://unpkg.com/js-md5@0.7.3/build/md5.min.js
 // @connect           baidu.com
 // @connect           baidupcs.com
+// @connect           jomodns.com
 // @connect           aliyundrive.com
 // @connect           aliyundrive.net
 // @connect           alipan.com

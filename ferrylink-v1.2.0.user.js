@@ -784,6 +784,8 @@
                 // reported "IDM 未响应" forever. Advancing unconditionally costs nothing, since a
                 // seq is only ever compared against the last one IDM saw.
                 this.sendLinkToIDM.seq++;
+                // DEBUG: log the full exchange so we can compare with LinkSwift
+                console.log('[FerryLink IDM]', { url, seq, data, res: res === false ? '(no response)' : String(res).slice(0, 200) });
                 if (res && String(res).endsWith(`${seq}:3;`)) {
                     return 'success';
                 }

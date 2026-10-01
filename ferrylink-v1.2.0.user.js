@@ -984,7 +984,7 @@
         },
         tianyi: {
             pcs: {"0": "https://cloud.189.cn/api/open/file/getFileDownloadUrl.action", "1": "https://api.cloud.189.cn/open/oauth2/ssoH5.action", "2": "https://api.cloud.189.cn/open/file/getFileDownloadUrl.action"},
-            btn: {"home": ".nav-opea"},
+            btn: {"home": "[class*=\"FileHead_file-head-left\"]"},
             api: {0: "API 下载", 1: ''},
             aria: {0: "Aria 下载", 1: ''},
             rpc: {0: "RPC 下载", 1: ''},

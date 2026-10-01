@@ -1962,7 +1962,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
             doc.on('click', '.listener-open-setting', (e) => {
-                            console.log('[tianyi] settings clicked, target:', e.target.className);
+                            console.log('[tianyi] settings clicked, target:', e.target.className, 'href:', e.target.href, 'closest pl-button:', !!$(e.target).closest('.pl-button').length);
                             base.showSetting(e);
                         });
         },

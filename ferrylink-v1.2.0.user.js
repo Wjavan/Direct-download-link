@@ -2019,25 +2019,26 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 });
                 if (uploadBtn) {
                     found = true;
-                    // Find the upload action bar by looking for the container holding the upload button
-                    var actionBar = null;
-                    // Walk up from uploadBtn to find the container that also has other action buttons
+                    // Find the action bar container: .p-web-right holds upload, 新建文件夹, 刷新 etc.
                     var el = uploadBtn.parentElement;
                     while (el) {
-                        // Check if this element has a class with "upload" in it
-                        if (el.className && String(el.className).indexOf('upload') >= 0) {
-                            actionBar = el;
-                            break;
+                        var cls = String(el.className || '');
+                        if (cls.indexOf('web-right') >= 0 || cls.indexOf('FileHead_file-head-left') >= 0) {
+                            // Insert as first child (before 上传 button)
+                            if (el.firstChild) {
+                                el.insertBefore($button[0], el.firstChild);
+                            } else {
+                                el.appendChild($button[0]);
+                            }
+                            console.log('[tianyi] inserted into', el.tagName, el.className.slice(0,40));
+                            return;
                         }
                         el = el.parentElement;
                     }
-                    if (!actionBar) actionBar = uploadBtn.closest('[class*="upload"]');
-                    if (actionBar && actionBar.firstChild) {
-                        actionBar.insertBefore($button[0], actionBar.firstChild);
-                        console.log('[tianyi] inserted into actionbar:', actionBar.tagName, actionBar.className.slice(0,40));
-                    } else if (uploadBtn.parentElement) {
+                    // Fallback: insert before uploadBtn
+                    if (uploadBtn.parentElement) {
                         uploadBtn.parentElement.insertBefore($button[0], uploadBtn);
-                        console.log('[tianyi] inserted before uploadBtn:', uploadBtn.tagName, uploadBtn.className.slice(0,40));
+                        console.log('[tianyi] fallback: inserted before uploadBtn');
                     }
                     return;
                 }

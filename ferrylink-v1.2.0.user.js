@@ -648,9 +648,12 @@
                 btn.attr('data-processing', 'true');
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize'), {
-                    "Referer": location.origin + '/'
-                });
+                // ponytail: no custom headers for xunlei — LinkSwift calls sendLinkToIDM(link,
+                // filename, filesize) with no fourth arg at all. The standHeaders default
+                // (UA + Origin + Referer) still applies; adding a custom Referer on top was the
+                // only divergence, and it may have been the reason IDM's capture rejected the
+                // task after accepting it (the download would start then fail).
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize'));
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {

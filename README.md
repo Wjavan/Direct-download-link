@@ -129,12 +129,12 @@ aria2c --enable-rpc --rpc-listen-all --rpc-listen-port=6800 --rpc-secret=YOUR_SE
 - 深链弹出、链接一键复制
 - 主题色自定义
 
-**不支持**：他人分享链接页（v1.3.0 起移除）。
+**不支持**：他人分享链接页。
 
 ## 安装
 
 1. 安装 Tampermonkey
-2. 将 `netdisk-download-helper-v1.1.4.user.js` 拖入浏览器窗口，或在 Tampermonkey 中新建脚本并粘贴
+2. 将 `ferrylink-v1.2.0.user.js` 拖入浏览器窗口，或在 Tampermonkey 中新建脚本并粘贴
 3. 打开网盘页面，右上角出现「下载助手」按钮
 
 ## 常见问题

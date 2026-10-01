@@ -2019,17 +2019,25 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 });
                 if (uploadBtn) {
                     found = true;
-                    var parent = uploadBtn.parentElement;
-                    if (parent) {
-                        // Insert before the upload dropdown container (at the same level as 新建文件夹 etc.)
-                        // Find the common parent that holds both upload and other action buttons
-                        var actionBar = uploadBtn.closest('.FileHead_file-head-upload, .cloud-file, [class*="file-head"]');
-                        if (actionBar && actionBar.firstChild) {
-                            actionBar.insertBefore($button[0], actionBar.firstChild);
-                        } else if (parent) {
-                            parent.insertBefore($button[0], uploadBtn);
+                    // Find the upload action bar by looking for the container holding the upload button
+                    var actionBar = null;
+                    // Walk up from uploadBtn to find the container that also has other action buttons
+                    var el = uploadBtn.parentElement;
+                    while (el) {
+                        // Check if this element has a class with "upload" in it
+                        if (el.className && String(el.className).indexOf('upload') >= 0) {
+                            actionBar = el;
+                            break;
                         }
-                        console.log('[tianyi] relocated before:', uploadBtn.tagName, uploadBtn.className.slice(0,30), '|', (uploadBtn.textContent||'').trim().slice(0,15));
+                        el = el.parentElement;
+                    }
+                    if (!actionBar) actionBar = uploadBtn.closest('[class*="upload"]');
+                    if (actionBar && actionBar.firstChild) {
+                        actionBar.insertBefore($button[0], actionBar.firstChild);
+                        console.log('[tianyi] inserted into actionbar:', actionBar.tagName, actionBar.className.slice(0,40));
+                    } else if (uploadBtn.parentElement) {
+                        uploadBtn.parentElement.insertBefore($button[0], uploadBtn);
+                        console.log('[tianyi] inserted before uploadBtn:', uploadBtn.tagName, uploadBtn.className.slice(0,40));
                     }
                     return;
                 }

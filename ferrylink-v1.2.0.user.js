@@ -573,12 +573,12 @@
                 footer: "",
             }).then(() => {
                 message.success('设置成功！');
-                history.go(0);
+                // No history.go(0) — settings are saved in real-time via base.setValue()
             });
             doc.on('click', '.listener-color', async (e) => {
                 base.setValue('setting_theme_color', e.target.dataset.color);
                 message.success('设置成功！');
-                history.go(0);
+                // No history.go(0) — theme change applies immediately via CSS update
             });
             doc.on('input', '.listener-domain', async (e) => {
                 base.setValue('setting_rpc_domain', e.target.value);

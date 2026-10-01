@@ -66,6 +66,9 @@
     }
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
+    // ponytail: whether the CDN serving this batch of links honours Range. Set by the probe in
+    // ali's getPCSLink before generateDom runs; gates the 增强下载 button.
+    let rangeOk = false;
     let watched = {};
     const customClass = {
         popup: 'pl-popup',
@@ -1556,7 +1559,7 @@
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
-            doc.on('click', '.listener-link-api-browser', async (e) => {
+            doc.on('click', '.listener-link-api browser', async (e) => {
                 e.preventDefault();
                 let href = e.currentTarget.dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
@@ -1595,7 +1598,7 @@
                 o.tip.hide();
                 o.link.show();
             });
-            doc.on('click', '.listener-link-api-blob', async (e) => {
+            doc.on('click', '.listener-link-api blob', async (e) => {
                 e.preventDefault();
                 let o = _factory(e);
                 let $progress = o.item.find('.pl-item-progress');
@@ -1785,9 +1788,17 @@
                                 res.forEach((val, index) => {
                                     if (val && typeof val === 'string' && /^https?:/.test(val)) noUrlSelectList[index].downloadUrl = val;
                                 });
-                            let html = this.generateDom(selectList);
-                            this.showMainDialog(pan[mode][0], html, pan[mode][1]);
-                        },
+                                // ponytail: 增强下载 needs Range; 普通下载 does not. Probe the first link once and
+                                // let generateDom gate the button on the result, so an unsupporting CDN hides the
+                                // control instead of offering something that can only fail. One 1-byte request.
+                                const sample = selectList.find(v => v.downloadUrl);
+                                if (sample) {
+                                    const probe = await base.rangeSupported(sample.downloadUrl, {"Referer": location.origin});
+                                    rangeOk = !!(probe && probe.ok);
+                                }
+                                            let html = this.generateDom(selectList);
+                                            this.showMainDialog(pan[mode][0], html, pan[mode][1]);
+                                        },
         generateDom(list) {
             let content = '<div class="pl-main">';
             let alinkAllText = '';
@@ -1795,21 +1806,16 @@
                 if (v.type === 'folder') return;
                 let filename = base.esc(v.name);
                 let ext = base.getExtension(v.name);
+                let fid = v.fileId;
+                let did = v.driveId;
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
                 if (mode === 'api') {
-                    // ponytail: ali's CDN rejects Range, so base.download() (which probes Range
-                    // first and throws "该链接不支持分片下载") can only ever fail here. 普通下载
-                    // therefore hands the URL to the hidden iframe and lets the browser/downloader
-                    // fetch it — no Range, no chunking. 增强下载 is the opt-in path that does
-                    // stream through the script, and it is the one that needs Range. IDM hint bar
-                    // and the stop/tip/how spans come from baidu so the row looks the same.
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <button class="pl-item-link listener-link-api-browser pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}">普通下载</button>
-                                <button class="pl-item-link listener-link-api-blob pl-btn-primary" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
+                                <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>
+                                ${rangeOk ? `<button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>` : ''}
                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
-                                <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div>
                                 <div class="pl-item-progress" style="display: none">
                                     <div class="pl-progress">
                                         <div class="pl-progress-outer"></div>
@@ -1817,10 +1823,9 @@
                                           <div class="pl-progress-inner-text">0%</div>
                                         </div>
                                     </div>
-                                    <span class="pl-progress-stop listener-stop">取消下载</span>
-                                    <span class="pl-progress-tip">未发现IDM，使用自带浏览器下载</span>
-                                    <span class="pl-progress-how listener-how">如何唤起IDM？</span>
-                                </div></div>`;
+                                    <span class="pl-progress-tip">正在下载…</span>
+                                </div>
+                                </div>`;
                 }
                 if (mode === 'aria') {
                     let alink = this.convertLinkToAria(dlink, filename, navigator.userAgent);

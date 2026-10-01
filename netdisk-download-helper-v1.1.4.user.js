@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name              FerryLink
 // @namespace         https://github.com/Wjavan/Direct-download-link
-// @version           1.3.0
+// @version           1.2.0
 // @author            Wjavan
-// @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘（个人主页/文件夹）直链下载。支持 HTTP/JSON-RPC/cURL，推送至 IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。v1.3.0 起已移除分享页（他人分享链接）支持。
+// @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持 HTTP/JSON-RPC/cURL，推送至 IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。
 // @description:en    Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.A fork of youxiaohou's Pan Download Helper. 
 // @match             *://pan.baidu.com/disk/home*
 // @match             *://yun.baidu.com/disk/home*
@@ -610,6 +610,18 @@
                     $('.pl-tooltip').hide(0);
                 }
             });
+
+            // ponytail: one registration covers all six adapters — every api row renders this
+            // button, and every one of them already funnels its download through iframeDownload().
+            // The button differs from the link only in being explicit about the target: IDM's
+            // "高级浏览器整合" is what makes a plain <a href> hand off instead of saving in-page.
+            doc.on('click', '.listener-idm', (e) => {
+                e.preventDefault();
+                const href = e.currentTarget.dataset.link;
+                if (!base.iframeDownload(href)) return;
+                $(e.currentTarget).text('已唤起 IDM，请查看下载框')
+                    .animate({opacity: '0.5'}, "slow");
+            });
         },
         createLoading() {
             return $('<div class="pl-loading"><div class="pl-loading-box"><div><div></div><div></div></div></div></div>');
@@ -1156,6 +1168,7 @@
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary pl-btn-info listener-idm" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">IDM下载</button>
                                 <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div></div>`;
                 }
                 if (mode === 'aria') {
@@ -1521,6 +1534,7 @@
                                     content += `<div class="pl-item">
                                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary pl-btn-info listener-idm" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">IDM下载</button>
                                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                                 </div>`;
                                 }
@@ -1870,6 +1884,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary pl-btn-info listener-idm" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">IDM下载</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -2261,6 +2276,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     content += `<div class="pl-item">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                    <button class="pl-item-btn pl-btn-primary pl-btn-info listener-idm" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">IDM下载</button>
                                     ${v.mediaLink ? `<button class="pl-item-link listener-link-media pl-btn-primary" data-filename="${filename}" data-link="${v.mediaLink}" data-index="${i}">云播转码下载(更小更快)</button>` : ''}
                                     <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                     </div>`;
@@ -2575,6 +2591,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary pl-btn-info listener-idm" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">IDM下载</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -2891,6 +2908,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-btn pl-btn-primary pl-btn-info listener-idm" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">IDM下载</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {

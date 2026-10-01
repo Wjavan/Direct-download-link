@@ -1966,14 +1966,12 @@ base.iframeDownload(e.currentTarget.dataset.link);
             });
         },
         _insertBeforeUpload(container, $button) {
-            // First, insert before firstChild as fallback
+            // Use prepend to place button before all existing children (including 上传)
             if (container.firstChild) {
                 container.insertBefore($button[0], container.firstChild);
             } else {
                 container.appendChild($button[0]);
             }
-            // Then scan the page for the actual upload button and move if found
-            this._waitForUpload($button);
         },
         _waitForUpload($button) {
             var found = false;

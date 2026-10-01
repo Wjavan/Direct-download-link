@@ -1993,13 +1993,20 @@ base.iframeDownload(e.currentTarget.dataset.link);
             let $toolWrap;
             let $button = $(`<div class="tianyi-button pl-button">下载助手<ul class="pl-dropdown-menu" style="top: 26px;"><li class="pl-dropdown-menu-item pl-button-mode" data-mode="api">API下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="aria" >Aria下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="rpc">RPC下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="curl">cURL下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="bc" >BC下载</li><li class="pl-dropdown-menu-item pl-button-mode listener-open-setting">助手设置</li></ul></div>`);
             if (pt === 'home') {
-                base.listenElement(pan.btn.home, () => {
-                    let container = document.querySelector(pan.btn.home);
-                    if (container && $('.pl-button').length === 0) {
-                        this._insertBeforeUpload(container, $button);
-                    }
-                })
-            }
+                            base.listenElement(pan.btn.home, () => {
+                                let container = document.querySelector(pan.btn.home);
+                                if (container && $('.pl-button').length === 0) {
+                                    this._insertBeforeUpload(container, $button);
+                                    // Sync button width to dropdown menu width
+                                    setTimeout(() => {
+                                        const menu = $button.find('.pl-dropdown-menu');
+                                        if (menu.length) {
+                                            $button.css('width', menu.outerWidth() + 'px');
+                                        }
+                                    }, 100);
+                                }
+                            })
+                        }
             this.addPageListener();
         },
         async getToken() {

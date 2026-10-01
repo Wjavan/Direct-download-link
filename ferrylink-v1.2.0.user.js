@@ -1961,10 +1961,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', () => {
-                console.log('[tianyi] settings clicked');
-                base.showSetting();
-            });
+            doc.on('click', '.listener-open-setting', (e) => {
+                            console.log('[tianyi] settings clicked');
+                            base.showSetting(e);
+                        });
         },
         _insertBeforeUpload(container, $button) {
             // Use prepend to place button before all existing children (including 上传)

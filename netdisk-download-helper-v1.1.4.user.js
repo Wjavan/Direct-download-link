@@ -67,9 +67,6 @@
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {}, idm = {};
 
-    // ponytail: true while rendering the enhanced-download dialog, which omits 直接下载 so the
-    // user isn't offered the browser path after already choosing the cross-origin one.
-    let enhanceView = false;
     let watched = {};
     const customClass = {
         popup: 'pl-popup',
@@ -1595,28 +1592,17 @@
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/" -A "${ua || navigator.userAgent}"`);
         },
         addPageListener() {
-            // ponytail: ali's api row was rebuilt to match baidu's byte-for-byte (pl-item-tip +
-            // the stop/tip/how spans), so it needs baidu's _factory/_reset helpers and the tip
-            // handlers. Without them the IDM hint bar renders but never reacts.
-            function _factory(e) {
-                let target = $(e.target);
-                let item = target.parents('.pl-item');
-                let link = item.find('.pl-item-link');
-                let progress = item.find('.pl-item-progress');
-                let tip = item.find('.pl-item-tip');
-                return { item, link, progress, tip, target };
-            }
-            function _reset(i) {
-                ins[i] && clearInterval(ins[i]);
-                request[i] && request[i].abort();
-                progress[i] = 0;
-                idm[i] = false;
-            }
+            // ponytail: this was only registered in the xunlei adapter, so on the alipan page the
+            // 复制文件名 button had no handler (one adapter activates per page). Identical body,
+            // so the lazy fix is a copy here rather than hoisting a shared registration.
+            doc.on('click', '.listener-link-api-btn', async (e) => {
+                base.setClipboard(e.target.dataset.filename);
+                $(e.target).text('复制成功').animate({opacity: '0.5'}, "slow");
+            });
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
                         // ponytail: reset here, not in the blob handler — picking any mode from the
                         // dropdown re-enters the normal dialog, so 直接下载 must come back.
-                        enhanceView = false;
                         Swal.showLoading();
                         try {
                             await this.getPCSLink();
@@ -1641,102 +1627,6 @@
                 if (iframe) iframe.src = href;
                 else $('#downloadIframe').attr('src', href);
                 message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
-            });
-            doc.on('click', '.listener-how', async (e) => {
-                let o = _factory(e);
-                let index = o.link[0].dataset.index;
-                if (request[index]) {
-                    request[index].abort();
-                    clearInterval(ins[index]);
-                    o.progress.hide();
-                    o.tip.show();
-                }
-            });
-            doc.on('click', '.listener-stop', async (e) => {
-                let o = _factory(e);
-                let index = o.link[0].dataset.index;
-                if (request[index]) {
-                    request[index].abort();
-                    clearInterval(ins[index]);
-                    o.tip.hide();
-                    o.progress.hide();
-                    o.link.show(0);
-                }
-            });
-            doc.on('click', '.listener-back', async (e) => {
-                let o = _factory(e);
-                o.tip.hide();
-                o.link.show();
-            });
-            // 增强下载 = 脚本跨域请求（多线程分片，不支持时降级为单流），带进度条。
-                        // 直接下载 = 浏览器 iframe 访问链接。二者是 LinkSwift 的原始分工。
-                        // 增强下载 opens its own dialog (same rows minus 直接下载) and starts downloading
-            // immediately — a second click inside that dialog would be busywork. The per-file
-            // runner is shared because auto-start has no click event to hang _factory() off.
-            doc.on('click', '.listener-link-api.blob', async (e) => {
-                e.preventDefault();
-                const runOne = (item, link) => {
-                    const $item = $(item);
-                        const $progress = $item.find('.pl-item-progress');
-                    const filename = link.dataset.filename;
-                    const href = link.dataset.link;
-                    const index = link.dataset.index;
-                    if (!href) {
-                        message.error('提示：未获取到下载链接，请刷新页面后重试！');
-                        return;
-                    }
-                    _reset(index);
-                    $item.find('.pl-item-link').hide();
-                    $item.find('.pl-item-tip').hide();
-                        $progress.show();
-                    $item.find('.pl-progress-tip').text('正在通过脚本跨域下载…');
-                    // ali's CDN 403s requests without a browser User-Agent — it treats a bare GM request as
-                                        // bot traffic. LinkSwift's standHeaders() sends navigator.userAgent on every
-                                        // request for the same reason. Referer alone got us 'HTTP 403'.
-                                        base.download(href, {"Referer": location.origin + '/', "User-Agent": navigator.userAgent}, {filename, index}).catch((err) => {
-                        clearInterval(ins[index]);
-                        $item.find('.pl-progress-tip').text(err && err.message ? '下载失败：' + err.message : '下载失败');
-                        $item.find('.pl-progress-inner').css('width', '0%');
-                        $item.find('.pl-progress-inner-text').text('0%');
-                        // ponytail: capture the timer this failure belongs to — a user can click again
-                        // before it fires, and an uncaptured restore would stomp the new download's UI.
-                        const failed = ins[index];
-                        setTimeout(() => {
-                            if (ins[index] === failed) {
-                                $progress.hide();
-                                $item.find('.pl-item-link').show();
-                            }
-                        }, 3000);
-                    });
-                    ins[index] = setInterval(() => {
-                        const prog = +progress[index] || 0;
-                        $item.find('.pl-progress-inner').css('width', prog + '%');
-                        $item.find('.pl-progress-inner-text').text(prog + '%');
-                        if (prog >= 100) {
-                            clearInterval(ins[index]);
-                            $item.find('.pl-progress-tip').text('下载完成，已弹出保存框！');
-                                                    setTimeout(() => {
-                                                        $progress.hide();
-                                                        $item.find('.pl-item-link').show();
-                                                    }, 2500);
-                        }
-                    }, 500);
-                };
-                if (!enhanceView) {
-                    enhanceView = true;
-                    Swal.close();
-                    this.showMainDialog('增强下载（脚本跨域请求）', this.generateDom(selectList), pan.api[1]);
-                    // start after the dialog is in the DOM, and staggered so opening N rows does
-                    // not fire N downloads in the same tick (the pan CDN throttles concurrency).
-                    const rows = [...document.querySelectorAll('.pl-item')];
-                    rows.forEach((row, i) => {
-                        const link = row.querySelector('.listener-link-api.blob');
-                        if (link) setTimeout(() => runOne(row, link), i * 300);
-                    });
-                    return;
-                }
-                const o = _factory(e);
-                runOne(o.item[0], e.currentTarget);
             });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
@@ -1887,23 +1777,10 @@
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
                                 if (mode === 'api') {
-                                    // ponytail: enhanceView drops 直接下载 so the enhanced-download dialog offers
-                                    // only the cross-origin path — the user already chose it, and keeping the
-                                    // browser button there would make the two dialogs identical.
                                     content += `<div class="pl-item">
                                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                                ${enhanceView ? '' : `<button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>`}
-                                                <button class="pl-item-link listener-link-api blob pl-btn-primary" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
+                                                <button class="pl-item-link listener-link-api browser pl-btn-primary pl-btn-info" data-did="${did}" data-fid="${fid}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">直接下载</button>
                                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
-                                                <div class="pl-item-progress" style="display: none">
-                                                    <div class="pl-progress">
-                                                        <div class="pl-progress-outer"></div>
-                                                        <div class="pl-progress-inner" style="width:0%">
-                                                          <div class="pl-progress-inner-text">0%</div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="pl-progress-tip">正在下载…</span>
-                                                </div>
                                                 </div>`;
                                 }
                 if (mode === 'aria') {

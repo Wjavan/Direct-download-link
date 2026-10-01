@@ -696,6 +696,7 @@
                 --pl-line: #e6e8eb;
                 --pl-ink: #303133;
                 --pl-ink-soft: #909399;
+                --pl-ink-disabled: #c0c4cc;
                 --pl-surface: #ffffff;
                 --pl-surface-alt: #f5f6f7;
                 --pl-danger: #cc3235;
@@ -706,6 +707,7 @@
                 --pl-shadow-pop: 0 1px 1px rgba(28, 28, 32 / 5%), 0 8px 24px rgba(28, 28, 32 / 12%);
                 --pl-dur: 180ms;
                 --pl-ease: cubic-bezier(.4, 0, .2, 1);
+                --pl-spin: 700ms;
                 /* ponytail: --pl-z-dialog is a token like the rest, but the VALUE is unchanged from
                    the pre-token rule (100000) — raising it would put the dialog above the
                    dependency-failure banner (2147483647 is the ceiling) with nothing to gain. */
@@ -719,14 +721,15 @@
             ::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb:hover { border-radius: 5px; -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.2) }
             ::-webkit-scrollbar-thumb:hover { background-color: rgba(85,85,85,.3) }
             .swal2-popup { font-size: var(--pl-fs-title) !important; }
-            .pl-popup { font-size: var(--pl-fs) !important; }
+            .pl-popup { font-size: var(--pl-fs) !important; border-radius: var(--pl-radius) !important; box-shadow: var(--pl-shadow-pop) !important; }
             .pl-popup a { color: var(--pl-c) !important; }
             .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid var(--pl-line) !important; margin: 0 0 var(--pl-gap) !important; padding: 0 0 5px !important; }
             .pl-title { font-size: var(--pl-fs-title) !important; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
             .pl-content { padding: 0 !important; font-size: var(--pl-fs) !important; }
             .pl-main { max-height: 400px; overflow-y: scroll; }
             .pl-footer { font-size: var(--pl-fs) !important; justify-content: flex-start !important; margin: var(--pl-gap) 0 0 !important; padding: 5px 0 0 !important; color: var(--pl-danger) !important; }
-            .pl-item { display: flex; align-items: center; line-height: var(--pl-row-h); }
+            .pl-item { display: flex; align-items: center; line-height: var(--pl-row-h); border-radius: var(--pl-radius-sm); transition: background var(--pl-dur) var(--pl-ease); }
+            .pl-item:hover { background: var(--pl-surface-alt); }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: var(--pl-gap); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             /* ponytail: pl-a marks "this row is a raw link" (baidu/ali show the dlink as text).
@@ -735,12 +738,15 @@
                every adapter's link read the same and keeps the tooltip ellipsis. */
             .pl-a { color: var(--pl-c); text-decoration: none; }
             .pl-a:hover { color: var(--pl-c-hover); text-decoration: underline; }
-            .pl-item-btn { background: var(--pl-c); padding: 4px 5px; border-radius: var(--pl-radius-sm); line-height: 1; cursor: pointer; color: #fff; border: 0; transition: background var(--pl-dur) var(--pl-ease); }
+            .pl-item-btn { background: var(--pl-c); padding: 4px 5px; border-radius: var(--pl-radius-sm); line-height: 1; cursor: pointer; color: #fff; border: 0; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: background var(--pl-dur) var(--pl-ease); }
             .pl-item-btn:hover { background: var(--pl-c-hover); }
-            .pl-item-btn:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 1px; }
+            .pl-item-btn:active { filter: brightness(.9); }
+            .pl-item-btn:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
+            .pl-item-btn:disabled { background: var(--pl-surface-alt); color: var(--pl-ink-disabled); cursor: not-allowed; filter: none; }
             .pl-item-tip { display: flex; justify-content: space-between; flex: 1; }
             .pl-back { width: 70px; background: var(--pl-surface-alt); border-radius: var(--pl-radius-sm); cursor: pointer; margin: 1px 0; transition: background var(--pl-dur) var(--pl-ease); }
             .pl-back:hover { background: var(--pl-line); }
+            .pl-back:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
             .pl-ext { display: inline-block; width: 44px; background: var(--pl-ink-soft); color: #fff; height: 16px; line-height: 16px; font-size: var(--pl-fs); border-radius: var(--pl-radius-sm); }
             .pl-browserdownload { padding: 3px 10px; background: var(--pl-c); color: #fff; border-radius: var(--pl-radius-sm); cursor: pointer; border: 0; }
             .pl-item-progress { display:flex;flex: 1;align-items:center}
@@ -752,13 +758,20 @@
             .pl-progress-how{ flex: 0 0 90px; background: var(--pl-surface-alt); border-radius: var(--pl-radius-sm); margin-left: var(--pl-gap); cursor: pointer; text-align: center;}
             .pl-progress-stop{ flex: 0 0 50px; padding: 0 10px; background: var(--pl-danger); color: #fff; border-radius: var(--pl-radius-sm); cursor: pointer;margin-left:var(--pl-gap);height:20px}
             .pl-progress-inner-text:after { display: inline-block;content: "";height: 100%;vertical-align: middle;}
-            .pl-btn-primary { background: var(--pl-c); border: 0; border-radius: var(--pl-radius); color: #fff; cursor: pointer; font-size: var(--pl-fs); outline: none; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 6px 0; transition: background var(--pl-dur) var(--pl-ease); }
+            .pl-btn-primary { background: var(--pl-c); border: 0; border-radius: var(--pl-radius); color: #fff; cursor: pointer; font-size: var(--pl-fs); outline: none; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 6px 0; min-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background var(--pl-dur) var(--pl-ease); }
             .pl-btn-primary:hover { background: var(--pl-c-hover); }
             .pl-btn-primary:active { filter: brightness(.9); }
-            .pl-btn-primary:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 1px; }
+            .pl-btn-primary:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
+            .pl-btn-primary:disabled { background: var(--pl-surface-alt); color: var(--pl-ink-disabled); cursor: not-allowed; filter: none; }
             .pl-btn-success { background: var(--pl-success); animation: easeOpacity 1.2s 2; animation-fill-mode:forwards }
             .pl-btn-info { background: var(--pl-info); }
-            .pl-btn-warning { background: var(--pl-warning); }
+            /* ponytail: 助手设置 is a secondary action sitting next to 发送全部链接. As a filled
+               orange button it carried the same visual weight as the primary, so both read as
+               "do this". Outlined keeps it clickable but clearly not the main path. */
+            .pl-btn-warning { background: transparent; color: var(--pl-warning); border: 1px solid currentColor; }
+            .pl-btn-warning:hover { background: color-mix(in srgb, var(--pl-warning) 12%, transparent); }
+            .pl-btn-warning:active { background: color-mix(in srgb, var(--pl-warning) 20%, transparent); }
+            .pl-btn-warning:focus-visible { outline: 2px solid var(--pl-warning); outline-offset: 2px; }
             .pl-btn-danger { background: var(--pl-danger); }
             /* ponytail: the six host classes keep their per-pan geometry (margins, height, float)
                because each page's toolbar needs its own offsets, but colour/radius/typography
@@ -779,7 +792,7 @@
             .quark-button:hover { background: var(--pl-surface-alt); }
             .quark-button:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
             .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: var(--pl-ink); background: var(--pl-surface); z-index: 999; width: 102px; border: 1px solid var(--pl-line); border-radius: 10px; box-shadow: var(--pl-shadow-pop); }
-            .pl-dropdown-menu-item { height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--pl-dur) var(--pl-ease); }
+            .pl-dropdown-menu-item { min-height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--pl-dur) var(--pl-ease); }
             .pl-dropdown-menu-item:hover { background-color: var(--pl-c-soft); }
             .pl-button .pl-dropdown-menu { display: none; }
             /* focus-within: the menu is reachable by keyboard now that the trigger is a real
@@ -822,8 +835,23 @@
             body.swal2-height-auto { height: inherit !important; }
             /* ponytail: reduced-motion is honoured by dropping the pulsing hint animation and the
                menu's slide-free transitions, not by rewriting the markup that triggers them. */
+            /* ponytail: .is-loading is a style-only hook — nothing sets it yet. It exists so a
+               later JS change can mark a button busy without redoing the animation, and so the
+               class is already styled if a template ever ships it. The ::before spinner is
+               transform-only, so it never reflows the button. */
+            .pl-btn-primary.is-loading, .pl-item-btn.is-loading {
+                position: relative; color: transparent; pointer-events: none; }
+            .pl-btn-primary.is-loading::before, .pl-item-btn.is-loading::before {
+                content: ""; position: absolute; top: 50%; left: 50%;
+                width: 14px; height: 14px; margin: -7px 0 0 -7px;
+                border: 2px solid currentColor; border-top-color: transparent;
+                border-radius: 50%; color: #fff;
+                animation: plSpin var(--pl-spin) linear infinite; }
+            .pl-btn-warning.is-loading::before { color: var(--pl-warning); }
+             @keyframes plSpin { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
             @media (prefers-reduced-motion: reduce) {
-                .pl-button-init, .pl-btn-success { animation: none; }
+                .pl-button-init, .pl-btn-success, .pl-btn-primary.is-loading::before,
+                .pl-item-btn.is-loading::before { animation: none; }
                 .pl-btn-primary, .ali-button, .tianyi-button, .yidong-button,
                 .xunlei-button, .quark-button, .pl-dropdown-menu-item, .pl-input { transition: none; }
             }

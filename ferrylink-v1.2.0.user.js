@@ -580,17 +580,8 @@
                                                     didOpen: () => {
                                                             const container = Swal.getContainer();
                                                             const popup = Swal.getPopup();
-                                                            if (container) {
-                                                                    container.style.setProperty('z-index', '2147483647', 'important');
-                                                                    container.style.setProperty('position', 'fixed', 'important');
-                                                                    container.style.setProperty('top', '50%', 'important');
-                                                                    container.style.setProperty('left', '50%', 'important');
-                                                                    container.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
-                                                            }
-                                                            if (popup) {
-                                                                    popup.style.setProperty('z-index', '2147483647', 'important');
-                                                                    popup.style.setProperty('position', 'fixed', 'important');
-                                                            }
+                                                            if (container) container.style.setProperty('z-index', '2147483647', 'important');
+                                                            if (popup) popup.style.setProperty('z-index', '2147483647', 'important');
                                                     },
                                                 }).then(() => {
                                                                             message.success('设置成功！');

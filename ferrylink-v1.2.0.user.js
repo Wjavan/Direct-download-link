@@ -934,15 +934,15 @@
             .swal2-container { z-index: 100000 !important; }
             body.swal2-height-auto { height: inherit !important; }
             .pl-ico { flex: 0 0 auto; width: 14px; height: 14px; margin-right: 5px; vertical-align: -2px; pointer-events: none; }
-            .pl-btn-primary.is-loading, .pl-item-btn.is-loading {
+            .pl-btn-primary.is-loading, button.pl-item-btn.is-loading {
                 position: relative; color: transparent; pointer-events: none; }
-            .pl-btn-primary.is-loading::before, .pl-item-btn.is-loading::before {
+            .pl-btn-primary.is-loading::before, button.pl-item-btn.is-loading::before {
                 content: ""; position: absolute; top: 50%; left: 50%;
                 width: 14px; height: 14px; margin: -7px 0 0 -7px;
                 border: 2px solid currentColor; border-top-color: transparent;
                 border-radius: 50%; color: #fff;
                 animation: plSpin 700ms linear infinite; }
-            .pl-btn-primary.is-loading > .pl-ico, .pl-item-btn.is-loading > .pl-ico { display: none; }
+            .pl-btn-primary.is-loading > .pl-ico, button.pl-item-btn.is-loading > .pl-ico { display: none; }
             .pl-btn-warning.is-loading::before { color: #da9328; }
              @keyframes plSpin { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
             @media (prefers-reduced-motion: reduce) {

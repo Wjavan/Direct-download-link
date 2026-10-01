@@ -2019,11 +2019,11 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 });
                 if (uploadBtn) {
                     found = true;
-                    // Find the action bar container: .p-web-right holds upload, 新建文件夹, 刷新 etc.
+                    // Find the action bar container: .FileHead_file-head-upload holds 上传 dropdown
                     var el = uploadBtn.parentElement;
                     while (el) {
                         var cls = String(el.className || '');
-                        if (cls.indexOf('web-right') >= 0 || cls.indexOf('FileHead_file-head-left') >= 0) {
+                        if (cls.indexOf('file-head-upload') >= 0 || cls.indexOf('web-right') >= 0 || cls.indexOf('FileHead_file-head-left') >= 0) {
                             // Insert as first child (before 上传 button)
                             if (el.firstChild) {
                                 el.insertBefore($button[0], el.firstChild);

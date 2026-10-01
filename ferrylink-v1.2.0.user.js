@@ -855,11 +855,11 @@
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
-            .pl-item .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
-            .pl-item .pl-item-btn:hover { opacity: 0.9; }
-            .pl-item .pl-item-btn:active { filter: brightness(.9); }
-            .pl-item .pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
-            .pl-item .pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
+            button.pl-item-btn { background: ${color} !important; padding: 4px 5px !important; border-radius: 4px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
+            button.pl-item-btn:hover { opacity: 0.9; }
+            button.pl-item-btn:active { filter: brightness(.9); }
+            button.pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
+            button.pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
             .pl-item-tip { display: flex; justify-content: space-between; flex: 1; }
             .pl-back { width: 70px; background: #f5f6f7; border-radius: 4px; cursor: pointer; margin: 1px 0; transition: background 180ms ease; }
             .pl-back:hover { background: #e6e8eb; }

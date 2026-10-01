@@ -767,16 +767,21 @@
                 // server), file size, then the field list.
                 // ponytail: 10241 + size=0 is the only combination that actually downloaded.
                 const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:0:0,${fields.join(',')};`;
-                // ponytail: no abort() here. LinkSwift's base.post returns the raw
-                // GM_xmlhttpRequest so it can cancel; ours returns a Promise, so the request
-                // simply keeps running until its own 30s timeout. Racing is still correct — the
-                // rejection is what matters — the abandoned request only holds one localhost
-                // socket for a few seconds.
-                const post = base.post(url, data, {}, 'text').catch(() => false);
-                const timeout = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('timeout')), 15000);
+                // ponytail: bypass base.post — it rejects on res.status >= 400 and parses as
+                // JSON, but IDM's capture protocol returns a non-standard body (MSG#…:3;), and
+                // may return a status code base.post treats as an error. Use GM_xmlhttpRequest
+                // directly so we see the raw response regardless of status.
+                const raw = await new Promise((resolve) => {
+                    GM_xmlhttpRequest({
+                        method: "POST", url, data,
+                        headers: { "Content-Type": "text/plain" },
+                        timeout: 15000,
+                        onload: (r) => resolve(r.responseText || r.response || ''),
+                        ontimeout: () => resolve(''),
+                        onerror: () => resolve(''),
+                    });
                 });
-                const res = await Promise.race([post, timeout]).catch(() => false);
+                const res = raw || false;
                 // ponytail: seq MUST advance on failure too. IDM treats a repeated seq as a
                 // replay and drops it without answering, so a failed send used to wedge the
                 // counter: the first attempt (rejected, e.g. the wrong 10241 size flag) burned

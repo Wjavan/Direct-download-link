@@ -197,7 +197,7 @@
         // setting_rpc_dir away from the old Windows-only 'C:' default.
         migrate() {
             const MARK = 'ferrylink_migrated_version';
-            const VERSION = '1.3.0';
+            const VERSION = '1.2.0';
             try {
                 if (GM_getValue(MARK, '') === VERSION) return;
                 // orphaned by removing share-page support

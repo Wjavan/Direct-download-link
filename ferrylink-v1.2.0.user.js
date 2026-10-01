@@ -546,8 +546,7 @@
                 base.getValue(v.name) === undefined && base.setValue(v.name, v.value);
             });
         },
-        showSetting(event) {
-                    console.log('[showSetting] called', event);
+        showSetting() {
                     let dom = '', btn = '',
                 colorList = ['#09AAFF', '#cc3235', '#526efa', '#518c17', '#ed944b', '#f969a5', '#bca280'];
             dom += `<label class="pl-setting-label"><div class="pl-label">RPC主机</div><input type="text"  placeholder="主机地址，需带上http(s)://" class="pl-input listener-domain" value="${base.esc(base.getValue('setting_rpc_domain'))}"></label>`;
@@ -565,7 +564,6 @@
             dom += `</select></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">主题颜色</div> <div class="pl-color">${btn}<div></label>`;
             dom = '<div>' + dom + '</div>';
-            console.log('[showSetting] Swal.fire about to be called');
                                                 Swal.fire({
                                                     title: '助手配置',
                                                     html: dom,
@@ -586,11 +584,10 @@
                                                         if (popup) popup.style.setProperty('z-index', '2147483647', 'important');
                                                     },
                                                 }).then(() => {
-                                        console.log('[showSetting] Swal.fire resolved');
-                                        message.success('设置成功！');
-                                    }).catch(err => {
-                                        console.error('[showSetting] Swal.fire error:', err);
-                                    });
+                                                                            message.success('设置成功！');
+                                                                        }).catch(err => {
+                                                                            console.error('[showSetting] Swal.fire error:', err);
+                                                                        });
             doc.on('click', '.listener-color', async (e) => {
                 base.setValue('setting_theme_color', e.target.dataset.color);
                 message.success('设置成功！');
@@ -1979,9 +1976,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $('.listener-link-rpc').click();
                 $(e.target).text('发送完成，发送结果见上方按钮！').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-open-setting', (e) => {
-                            console.log('[tianyi] settings clicked, target:', e.target.className, 'href:', e.target.href, 'closest pl-button:', !!$(e.target).closest('.pl-button').length);
-                            base.showSetting(e);
+            doc.on('click', '.listener-open-setting', () => {
+                            base.showSetting();
                         });
         },
         _insertBeforeUpload(container, $button) {

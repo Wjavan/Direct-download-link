@@ -658,7 +658,7 @@
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
-                    btn.prop('disabled', true).text('已推送至 IDM')
+                    btn.addClass('pl-btn-info').text('已推送至 IDM')
                         .animate({opacity: '0.5'}, "slow");
                 } else {
                     btn.addClass('pl-btn-danger').text('推送失败：IDM 未响应，请确认已启动并允许连接')

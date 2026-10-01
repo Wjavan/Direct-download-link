@@ -9,7 +9,7 @@
 // @match             *://yun.baidu.com/disk/home*
 // @match             *://pan.baidu.com/disk/main*
 // @match             *://yun.baidu.com/disk/main*
-// @match             *://openapi.baidu.com/oauth/2.0/login_success*
+// @match             *://openapi.baidu.com/oauth/*
 // @match             *://www.aliyundrive.com/drive*
 // @match             *://www.alipan.com/drive*
 // @match             *://cloud.189.cn/web/*
@@ -41,6 +41,7 @@
 // @grant             GM_deleteValue
 // @grant             GM_registerMenuCommand
 // @grant             GM_cookie
+// @grant             GM_openInTab
 // @grant             window.close
 // @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgcng9IjIyIiBmaWxsPSIjMmI3ZmZmIi8+PHBhdGggZD0iTTY0IDMwdjQ2IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMTIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik00NCA1OGwyMCAyMCAyMC0yMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz48cmVjdCB4PSIzNCIgeT0iOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiNmZmYiLz48L3N2Zz4=
 // @license           GPL-3.0
@@ -813,8 +814,8 @@
         },
         ali: {
             pcs: {"0": "https://api.aliyundrive.com/v2/file/get_share_link_download_url", "1": "https://api.aliyundrive.com/v2/file/get_download_url"},
-            btn: {"home": "[class^=\"header--\"] > [class^=\"actions--\]"},
-            dom: {"list": "[class^=\"node-list-table-view--\"]", "grid": "[class^=\"node-list-grid-view--\"]", "switch": "[class^=\"switch-wrapper--\"]"},
+            btn: {"home": "[class*=\"header--\"] > [class*=\"actions--\"], [class*=\"header--\"] [class*=\"actions--\"]"},
+            dom: {"list": "[class*=\"node-list-table-view--\"]", "grid": "[class*=\"node-list-grid-view--\"]", "switch": "[class*=\"switch-wrapper--\"]"},
             api: {0: "API 下载", 1: ''},
             aria: {0: "Aria 下载", 1: ''},
             rpc: {0: "RPC 下载", 1: ''},
@@ -1092,7 +1093,7 @@
                 }
                 return token;
             };
-            const waitForToken = (maxAttempts = 30) => new Promise((resolve) => {
+            const waitForToken = (maxAttempts = 60) => new Promise((resolve) => {
                 let attempts = 0;
                 const interval = setInterval(() => {
                     const token = base.getValue('baidu_access_token');
@@ -1107,6 +1108,8 @@
                     }
                 }, 1000);
             });
+            // ponytail: HEAD/ranged-GET can extract the token without a tab when the
+            // user has already authorised the app — Baidu 302s straight to login_success.
             try {
                 if (base.getFinalUrl) {
                     let res = await base.getFinalUrl(pan.pcs[3]);
@@ -1133,13 +1136,14 @@
                 }
             } catch (e) {
             }
-            let frame = document.createElement('iframe');
-            frame.id = 'pl-auth-frame';
-            frame.style.cssText = 'display:none;width:0;height:0;border:0;';
-            frame.src = pan.pcs[3];
-            document.body.appendChild(frame);
-            let token = await waitForToken(12);
-            frame.remove();
+            // ponytail: hidden iframe can't auto-click the "authorise" button because the
+            // script doesn't run on openapi.baidu.com/oauth/authorize (no @match), and the
+            // iframe is display:none so the user can't click it either. GM_openInTab opens
+            // a real tab where initAuthorize() runs, auto-clicks authorise, captures the
+            // token on login_success, then closes the tab.
+            base.deleteValue('baidu_access_token');
+            GM_openInTab(pan.pcs[3], {active: false, insert: true, setParent: true});
+            let token = await waitForToken(60);
             return saveToken(token);
         },
         async getCurrentUK() {
@@ -1614,10 +1618,27 @@
             let $toolWrap;
             let $button = $(`<div class="ali-button pl-button"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M853.333 938.667H170.667a85.333 85.333 0 0 1-85.334-85.334v-384A85.333 85.333 0 0 1 170.667 384H288a32 32 0 0 1 0 64H170.667a21.333 21.333 0 0 0-21.334 21.333v384a21.333 21.333 0 0 0 21.334 21.334h682.666a21.333 21.333 0 0 0 21.334-21.334v-384A21.333 21.333 0 0 0 853.333 448H736a32 32 0 0 1 0-64h117.333a85.333 85.333 0 0 1 85.334 85.333v384a85.333 85.333 0 0 1-85.334 85.334z" fill="#fff"/><path d="M715.03 543.552a32.81 32.81 0 0 0-46.251 0L554.005 657.813v-540.48a32 32 0 0 0-64 0v539.734L375.893 543.488a32.79 32.79 0 0 0-46.229 0 32.427 32.427 0 0 0 0 46.037l169.557 168.811a32.81 32.81 0 0 0 46.251 0l169.557-168.81a32.47 32.47 0 0 0 0-45.974z" fill="#FF9C00"/></svg><span>下载助手</span><ul class="pl-dropdown-menu"><li class="pl-dropdown-menu-item pl-button-mode" data-mode="api">API下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="aria" >Aria下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="rpc">RPC下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="curl">cURL下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="bc" >BC下载</li><li class="pl-dropdown-menu-item pl-button-mode listener-open-setting">助手设置</li></ul></div>`);
             if (pt === 'home') {
-                base.listenElement(pan.btn.home, () => {
-                    $toolWrap = $(pan.btn.home);
-                    $('.pl-button').length === 0 && $toolWrap.append($button);
-                })
+                // ponytail: CSS module class prefixes change between alipan builds.
+                // Try the config selector first, then fall back to broader patterns.
+                const fallbacks = [
+                    pan.btn.home,
+                    '[class*="header--"] [class*="actions--"]',
+                    '[class*="file-list-header"] [class*="action"]',
+                    'header [class*="upload"]',
+                ];
+                const tryInject = () => {
+                    for (const sel of fallbacks) {
+                        let $el = $(sel);
+                        if ($el.length && $('.pl-button').length === 0) {
+                            $el.append($button);
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+                if (!tryInject()) {
+                    fallbacks.forEach(sel => base.listenElement(sel, tryInject));
+                }
             }
             base.createDownloadIframe();
             this.addPageListener();

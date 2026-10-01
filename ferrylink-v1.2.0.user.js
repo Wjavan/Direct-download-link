@@ -786,6 +786,8 @@
                     });
                 });
                 const res = raw || false;
+                // DEBUG: show what IDM actually replied
+                console.log('[FerryLink IDM]', { seq, res, raw });
                 // ponytail: seq MUST advance on failure too. IDM treats a repeated seq as a
                 // replay and drops it without answering, so a failed send used to wedge the
                 // counter: the first attempt (rejected, e.g. the wrong 10241 size flag) burned
@@ -793,7 +795,7 @@
                 // reported "IDM 未响应" forever. Advancing unconditionally costs nothing, since a
                 // seq is only ever compared against the last one IDM saw.
                 this.sendLinkToIDM.seq++;
-                if (res && String(res).endsWith(`${seq}:3;`)) {
+                if (res && String(res).endsWith('3;')) {
                     return 'success';
                 }
                 return 'fail';

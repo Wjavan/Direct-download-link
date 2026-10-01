@@ -546,8 +546,9 @@
                 base.getValue(v.name) === undefined && base.setValue(v.name, v.value);
             });
         },
-        showSetting() {
-            let dom = '', btn = '',
+        showSetting(event) {
+                    console.log('[showSetting] called', event);
+                    let dom = '', btn = '',
                 colorList = ['#09AAFF', '#cc3235', '#526efa', '#518c17', '#ed944b', '#f969a5', '#bca280'];
             dom += `<label class="pl-setting-label"><div class="pl-label">RPC主机</div><input type="text"  placeholder="主机地址，需带上http(s)://" class="pl-input listener-domain" value="${base.esc(base.getValue('setting_rpc_domain'))}"></label>`;
             dom += `<label class="pl-setting-label"><div class="pl-label">RPC端口</div><input type="text" placeholder="端口号，例如：Motrix为16800" class="pl-input listener-port" value="${base.esc(base.getValue('setting_rpc_port'))}"></label>`;

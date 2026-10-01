@@ -1817,7 +1817,11 @@
                 // dataSource by title. No fiber walking, so no mount-order dependency.
                 let gridDom = document.querySelector(pan.dom.grid);
                 if (!gridDom) return [];
-                let gridReact = base.findReact(gridDom, 1);
+                // ponytail: traverseUp must stay 0 here. CDP-verified on alipan 6.8.12 —
+                // the grid host fiber itself carries dataSource (5 items), but climbing
+                // one level up lands on a wrapper whose dataSource is an empty array,
+                // which made every selection look like "nothing checked".
+                let gridReact = base.findReact(gridDom, 0);
                 if (!gridReact) return [];
                 let dataSource = (gridReact.pendingProps || {}).dataSource || [];
                 if (!dataSource.length) return [];

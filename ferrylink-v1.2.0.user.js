@@ -612,30 +612,13 @@
             });
 
             // ponytail: one registration covers all six adapters — every api row renders this
-            // button, and the raw link beside it keeps the plain-browser path.
-            //
-            // ponytail: this button deliberately does NOT call iframeDownload. That helper moves the
-            // URL into a hidden iframe, which the browser treats as a background subresource fetch;
-            // download-manager extensions key on top-level navigations, so IDM often let those pass
-            // straight through to the browser's own downloader. window.open issues a real top-level
-            // navigation instead, which is what "高级浏览器整合" intercepts. The raw link keeps
-            // iframeDownload() so it stays a plain browser download — the two controls are now
-            // genuinely different requests, not two labels on the same one.
-            //
-            // Known limit, not a bug here: IDM decides whether to take over by the file extension in
-            // the URL *path*. A signed CDN link like xunlei's /download/?…&fext=rar has no
-            // extension in the path (it lives in a query parameter IDM does not parse), so IDM may
-            // still decline it and hand it to the browser. Nothing in the page can change that
-            // without rewriting a signed URL and risking a 403 — the fix belongs in IDM's own
-            // download-type list. Everything a script can influence is done here.
+            // button, and every one of them already funnels its download through iframeDownload().
+            // The button differs from the link only in being explicit about the target: IDM's
+            // "高级浏览器整合" is what makes a plain <a href> hand off instead of saving in-page.
             doc.on('click', '.listener-idm', (e) => {
                 e.preventDefault();
                 const href = e.currentTarget.dataset.link;
-                if (!/^https?:\/\//i.test(href)) {
-                    message.error('提示：下载链接无效！');
-                    return;
-                }
-                window.open(href, '_blank');
+                if (!base.iframeDownload(href)) return;
                 $(e.currentTarget).text('已唤起 IDM，请查看下载框')
                     .animate({opacity: '0.5'}, "slow");
             });

@@ -1622,6 +1622,58 @@
                 o.tip.hide();
                 o.link.show();
             });
+            doc.on('click', '.listener-link-api-blob', async (e) => {
+                e.preventDefault();
+                let o = _factory(e);
+                let $progress = o.item.find('.pl-item-progress');
+                let $width = $progress.find('.pl-progress-inner');
+                let $text = $progress.find('.pl-progress-inner-text');
+                let $tip = $progress.find('.pl-progress-tip');
+                let filename = e.currentTarget.dataset.filename;
+                let href = e.currentTarget.dataset.link;
+                let index = e.currentTarget.dataset.index;
+                // getPCSLink already resolved download_url into data-link; re-requesting it here
+                // hung GM_xmlhttpRequest, so trust data-link.
+                if (!href) {
+                    return message.error('提示：未获取到下载链接，请刷新页面后重试！');
+                }
+                _reset(index);
+                o.link.hide();
+                o.tip.hide();
+                o.progress.show();
+                $tip.text('正在通过文件流下载…');
+                // ponytail: ali has no ua in its config, so the Referer its CDN checks replaces
+                // baidu's User-Agent here.
+                base.download(href, {"Referer": location.origin}, {filename, index}).catch((err) => {
+                    clearInterval(ins[index]);
+                    $tip.text(err && err.message ? '下载失败：' + err.message : '下载失败');
+                    $width.css('width', '0%');
+                    $text.text('0%');
+                    // ponytail: capture the timer this failure belongs to — a user can click again
+                    // before it fires, and an uncaptured restore would stomp the new download's UI.
+                    const failed = ins[index];
+                    setTimeout(() => {
+                        if (ins[index] === failed) {
+                            o.progress.hide();
+                            o.link.show();
+                        }
+                    }, 3000);
+                });
+                ins[index] = setInterval(() => {
+                    let prog = +progress[index] || 0;
+                    $width.css('width', prog + '%');
+                    $text.text(prog + '%');
+                    if (prog >= 100) {
+                        clearInterval(ins[index]);
+                        o.item.find('.pl-progress-stop').hide();
+                        $tip.text('下载完成，已弹出保存框！');
+                        setTimeout(() => {
+                            o.progress.hide();
+                            o.link.show();
+                        }, 2500);
+                    }
+                }, 500);
+            });
             doc.on('click', '.listener-link-aria, .listener-copy-all', (e) => {
                 e.preventDefault();
                 try { base.setClipboard(decodeURIComponent(e.target.dataset.link)); } catch(e) { base.setClipboard(e.target.dataset.link); }
@@ -1769,13 +1821,15 @@
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
                 if (mode === 'api') {
-                    // ponytail: byte-for-byte the baidu row. Ali shipped a button-based variant
-                    // (直接下载 + 增强下载 + 复制文件名) and a bare progress line, which is why its
-                    // dialog read as a different style from the other five adapters. The IDM hint
-                    // bar and the stop/tip/how spans only work together with baidu's handler.
+                    // ponytail: the row now matches baidu's — one <a> showing the URL, plus the
+                    // IDM hint bar and the stop/tip/how progress spans, all of which ali lacked.
+                    // 增强下载(文件流) is a separate capability (streams the file through the
+                    // script instead of handing the URL to the downloader), so it stays as a
+                    // second button rather than being folded into the baidu shape.
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-link listener-link-api-blob pl-btn-primary" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
                                 <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div>
                                 <div class="pl-item-progress" style="display: none">
                                     <div class="pl-progress">

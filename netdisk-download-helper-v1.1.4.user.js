@@ -1557,15 +1557,15 @@
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
-            doc.on('click', '.listener-link-api browser', async (e) => {
+            doc.on('click', '.listener-link-api.browser', async (e) => {
                 e.preventDefault();
                 let href = e.currentTarget.dataset.link;
                 if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
                 // ponytail: no base.download() here. It opens with a Range probe and throws
-                // "该链接不支持分片下载" when the CDN refuses, which is always true for ali's
-                // dl1.aliyundrive.cloud links. The hidden iframe lets the browser (or IDM, via
-                // its extension) fetch the URL directly — no Range, no chunking, no false error.
-                let iframe = document.getElementById('downloadIframe');
+                                // "该链接不支持分片下载" when the CDN refuses. The hidden iframe lets the
+                                // browser (or IDM, via its extension) fetch the URL directly — no Range, no
+                                // chunking, and no dependency on a probe result that measured one CDN node.
+                                let iframe = document.getElementById('downloadIframe');
                 if (iframe) iframe.src = href;
                 else $('#downloadIframe').attr('src', href);
                 message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
@@ -1596,7 +1596,7 @@
                 o.tip.hide();
                 o.link.show();
             });
-            doc.on('click', '.listener-link-api blob', async (e) => {
+            doc.on('click', '.listener-link-api.blob', async (e) => {
                 e.preventDefault();
                 let o = _factory(e);
                 let $progress = o.item.find('.pl-item-progress');
@@ -1612,11 +1612,10 @@
                     return message.error('提示：未获取到下载链接，请刷新页面后重试！');
                 }
                 _reset(index);
-                // ponytail: _factory's .link is item.find('.pl-item-link'), which now matches
-                // BOTH buttons — hiding o.link would hide 普通下载 too and never restore it.
-                // Target just the clicked button, and restore both on the way out.
-                let $btn = $(e.currentTarget);
-                $btn.hide();
+                                // ponytail: _factory's .link is item.find('.pl-item-link'), which matches BOTH
+                                // buttons — hiding o.link would hide 直接下载 too and never restore it. Target just
+                                // the clicked button, and restore both on the way out.
+                                $(e.currentTarget).hide();
                 o.tip.hide();
                 o.progress.show();
                 $tip.text('正在通过文件流下载…');

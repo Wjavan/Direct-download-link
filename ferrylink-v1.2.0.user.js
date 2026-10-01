@@ -785,11 +785,17 @@
                 // socket for a few seconds.
                 const post = base.post(url, data, {}, 'text').catch(() => false);
                 const timeout = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('timeout')), 15000);
+                    setTimeout(() => reject(new Error('timeout')), 5000);
                 });
                 const res = await Promise.race([post, timeout]).catch(() => false);
+                // ponytail: seq MUST advance on failure too. IDM treats a repeated seq as a
+                // replay and drops it without answering, so a failed send used to wedge the
+                // counter: the first attempt (rejected, e.g. the wrong 10241 size flag) burned
+                // seq=1, and every attempt after that reused 1 and got silence — the button then
+                // reported "IDM 未响应" forever. Advancing unconditionally costs nothing, since a
+                // seq is only ever compared against the last one IDM saw.
+                this.sendLinkToIDM.seq++;
                 if (res && String(res).endsWith(`${seq}:3;`)) {
-                    this.sendLinkToIDM.seq++;
                     return 'success';
                 }
                 return 'fail';

@@ -452,7 +452,23 @@
                                     ontimeout: () => { clear(); reject(new Error('请求超时（30s）')); },
                                     onload: (res) => {
                                         clear();
-                                        type === 'blob' ? resolve(res) : resolve(res.response || res.responseText);
+                                        if (type === 'blob') { resolve(res); return; }
+                                        // ponytail: a 4xx body is still "loaded", so resolving it
+                                        // let an error object flow downstream as if it were data —
+                                        // e.g. ali's {code:'AccessTokenInvalid'} arrived with no
+                                        // .url and only surfaced much later as "下载链接无效".
+                                        // Reject with the server's own message so callers report it.
+                                        if (res.status >= 400) {
+                                            const body = res.response || res.responseText || '';
+                                            let msg = 'HTTP ' + res.status;
+                                            try {
+                                                const parsed = JSON.parse(body);
+                                                msg = parsed.message || parsed.msg || parsed.code || msg;
+                                            } catch (e) { /* non-JSON error body */ }
+                                            reject(new Error(msg));
+                                            return;
+                                        }
+                                        resolve(res.response || res.responseText);
                                     },
                                     onerror: (err) => {
                                         clear();
@@ -1696,7 +1712,15 @@
                         if (res && res.url) selectList[i].downloadUrl = res.url;
                     });
                 } catch (e) {
-                    Swal.close(); return message.error('提示：获取下载链接失败，请刷新重试！');
+                    // ponytail: base.post now rejects on 4xx with the server's own message, so an
+                    // expired token reads as "Token过期" instead of silently leaving downloadUrl
+                    // undefined and surfacing later as the misleading "下载链接无效".
+                    Swal.close();
+                    const m = (e && e.message) || '';
+                    if (/AccessTokenInvalid|token/i.test(m)) {
+                        return message.error('提示：Token已过期，请刷新网页后重试！');
+                    }
+                    return message.error('提示：获取下载链接失败（' + m + '），请刷新重试！');
                 }
                 if (selectList.length > 20) {
                     Swal.close();

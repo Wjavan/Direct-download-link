@@ -834,171 +834,106 @@
         },
         addPanLinkerStyle() {
             color = base.getValue('setting_theme_color');
-            // ponytail: one token layer instead of magic numbers scattered through ~70 rules.
-            // --pl-c is injected last so the stored theme colour still wins. Everything else
-            // derives from it, so a theme switch is a single --pl-c change, not a CSS edit.
             let css = `
-            :root {
-                --pl-c: ${color};
-                --pl-c-hover: color-mix(in srgb, ${color} 88%, #000);
-                --pl-c-soft: color-mix(in srgb, ${color} 12%, transparent);
-                --pl-radius: 6px;
-                --pl-radius-sm: 4px;
-                --pl-gap: 10px;
-                --pl-row-h: 22px;
-                --pl-fs: 12px;
-                --pl-fs-title: 16px;
-                --pl-line: #e6e8eb;
-                --pl-ink: #303133;
-                --pl-ink-soft: #909399;
-                --pl-ink-disabled: #c0c4cc;
-                --pl-surface: #ffffff;
-                --pl-surface-alt: #f5f6f7;
-                --pl-danger: #cc3235;
-                --pl-success: #55af28;
-                --pl-warning: #da9328;
-                --pl-info: #606266;
-                --pl-shadow: 0 2px 12px rgba(0, 0, 0, .08);
-                --pl-shadow-pop: 0 1px 1px rgba(28, 28, 32 / 5%), 0 8px 24px rgba(28, 28, 32 / 12%);
-                --pl-dur: 180ms;
-                --pl-ease: cubic-bezier(.4, 0, .2, 1);
-                --pl-spin: 700ms;
-                /* ponytail: --pl-z-dialog is a token like the rest, but the VALUE is unchanged from
-                   the pre-token rule (100000) — raising it would put the dialog above the
-                   dependency-failure banner (2147483647 is the ceiling) with nothing to gain. */
-                --pl-z-dialog: 100000;
-                --pl-z-tip: 110000;
-            }
             body::-webkit-scrollbar { display: none }
             ::-webkit-scrollbar { width: 6px; height: 10px }
             ::-webkit-scrollbar-track { border-radius: 0; background: none }
             ::-webkit-scrollbar-thumb { background-color: rgba(85,85,85,.4) }
             ::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb:hover { border-radius: 5px; -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.2) }
             ::-webkit-scrollbar-thumb:hover { background-color: rgba(85,85,85,.3) }
-            .swal2-popup { font-size: var(--pl-fs-title) !important; }
-            .pl-popup { font-size: var(--pl-fs) !important; border-radius: var(--pl-radius) !important; box-shadow: var(--pl-shadow-pop) !important; }
-            .pl-popup a { color: var(--pl-c) !important; }
-            .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid var(--pl-line) !important; margin: 0 0 var(--pl-gap) !important; padding: 0 0 5px !important; }
-            .pl-title { font-size: var(--pl-fs-title) !important; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
-            .pl-content { padding: 0 !important; font-size: var(--pl-fs) !important; }
+            .swal2-popup { font-size: 16px !important; }
+            .pl-popup { font-size: 12px !important; border-radius: 6px !important; box-shadow: 0 0 1px 1px rgb(28 28 32 / 5%), 0 8px 24px rgb(28 28 32 / 12%) !important; }
+            .pl-popup a { color: ${color} !important; }
+            .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid #e6e8eb !important; margin: 0 0 10px !important; padding: 0 0 5px !important; }
+            .pl-title { font-size: 16px !important; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
+            .pl-content { padding: 0 !important; font-size: 12px !important; }
             .pl-main { max-height: 400px; overflow-y: scroll; }
-            .pl-footer { font-size: var(--pl-fs) !important; justify-content: flex-start !important; margin: var(--pl-gap) 0 0 !important; padding: 5px 0 0 !important; color: var(--pl-danger) !important; }
-            .pl-item { display: flex; align-items: center; line-height: var(--pl-row-h); border-radius: var(--pl-radius-sm); transition: background var(--pl-dur) var(--pl-ease); }
-            .pl-item:hover { background: var(--pl-surface-alt); }
-            .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: var(--pl-gap); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
+            .pl-footer { font-size: 12px !important; justify-content: flex-start !important; margin: 10px 0 0 !important; padding: 5px 0 0 !important; color: #cc3235 !important; }
+            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; }
+            .pl-item:hover { background: #f5f6f7; }
+            .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-            /* ponytail: pl-a marks "this row is a raw link" (baidu/ali show the dlink as text).
-               It had no rule of its own, so the link inherited the host page's <a> styling —
-               blue + underline, or whatever the pan's theme did with anchors. One rule makes
-               every adapter's link read the same and keeps the tooltip ellipsis. */
-            .pl-a { color: var(--pl-c); text-decoration: none; }
-            .pl-a:hover { color: var(--pl-c-hover); text-decoration: underline; }
-            .pl-item-btn { background: var(--pl-c); padding: 4px 5px; border-radius: var(--pl-radius-sm); line-height: 1; cursor: pointer; color: #fff; border: 0; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: background var(--pl-dur) var(--pl-ease); }
-            .pl-item-btn:hover { background: var(--pl-c-hover); }
+            .pl-a { color: ${color}; text-decoration: none; }
+            .pl-a:hover { text-decoration: underline; opacity: 0.8; }
+            .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
+            .pl-item-btn:hover { opacity: 0.9; }
             .pl-item-btn:active { filter: brightness(.9); }
-            .pl-item-btn:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .pl-item-btn:disabled { background: var(--pl-surface-alt); color: var(--pl-ink-disabled); cursor: not-allowed; filter: none; }
+            .pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
+            .pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
             .pl-item-tip { display: flex; justify-content: space-between; flex: 1; }
-            .pl-back { width: 70px; background: var(--pl-surface-alt); border-radius: var(--pl-radius-sm); cursor: pointer; margin: 1px 0; transition: background var(--pl-dur) var(--pl-ease); }
-            .pl-back:hover { background: var(--pl-line); }
-            .pl-back:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .pl-ext { display: inline-block; width: 44px; background: var(--pl-ink-soft); color: #fff; height: 16px; line-height: 16px; font-size: var(--pl-fs); border-radius: var(--pl-radius-sm); }
-            .pl-browserdownload { padding: 3px 10px; background: var(--pl-c); color: #fff; border-radius: var(--pl-radius-sm); cursor: pointer; border: 0; }
+            .pl-back { width: 70px; background: #f5f6f7; border-radius: 4px; cursor: pointer; margin: 1px 0; transition: background 180ms ease; }
+            .pl-back:hover { background: #e6e8eb; }
+            .pl-back:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
+            .pl-ext { display: inline-block; width: 44px; background: #909399; color: #fff; height: 16px; line-height: 16px; font-size: 12px; border-radius: 4px; }
+            .pl-browserdownload { padding: 3px 10px; background: ${color}; color: #fff; border-radius: 4px; cursor: pointer; border: 0; }
             .pl-item-progress { display:flex;flex: 1;align-items:center}
             .pl-progress { display: inline-block;vertical-align: middle;width: 100%; box-sizing: border-box;line-height: 1;position: relative;height:15px; flex: 1}
-            .pl-progress-outer { height: 15px; border-radius: 100px; background-color: var(--pl-surface-alt); overflow: hidden; position: relative; vertical-align: middle; }
-            .pl-progress-inner { position: absolute; left: 0; top: 0; background-color: var(--pl-c); text-align: right; border-radius: 100px; line-height: 1; white-space: nowrap; transition: width .6s ease; }
-            .pl-progress-inner-text { display: inline-block; vertical-align: middle; color: var(--pl-ink-soft); font-size: var(--pl-fs); margin: 0 5px; height: 15px; }
+            .pl-progress-outer { height: 15px; border-radius: 100px; background-color: #f5f6f7; overflow: hidden; position: relative; vertical-align: middle; }
+            .pl-progress-inner { position: absolute; left: 0; top: 0; background-color: ${color}; text-align: right; border-radius: 100px; line-height: 1; white-space: nowrap; transition: width .6s ease; }
+            .pl-progress-inner-text { display: inline-block; vertical-align: middle; color: #909399; font-size: 12px; margin: 0 5px; height: 15px; }
             .pl-progress-tip{ flex:1;text-align:right}
-            .pl-progress-how{ flex: 0 0 90px; background: var(--pl-surface-alt); border-radius: var(--pl-radius-sm); margin-left: var(--pl-gap); cursor: pointer; text-align: center;}
-            .pl-progress-stop{ flex: 0 0 50px; padding: 0 10px; background: var(--pl-danger); color: #fff; border-radius: var(--pl-radius-sm); cursor: pointer;margin-left:var(--pl-gap);height:20px}
+            .pl-progress-how{ flex: 0 0 90px; background: #f5f6f7; border-radius: 4px; margin-left: 10px; cursor: pointer; text-align: center;}
+            .pl-progress-stop{ flex: 0 0 50px; padding: 0 10px; background: #cc3235; color: #fff; border-radius: 4px; cursor: pointer;margin-left:10px;height:20px}
             .pl-progress-inner-text:after { display: inline-block;content: "";height: 100%;vertical-align: middle;}
-            .pl-btn-primary { background: var(--pl-c); border: 0; border-radius: var(--pl-radius); color: #fff; cursor: pointer; font-size: var(--pl-fs); outline: none; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 6px 0; min-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background var(--pl-dur) var(--pl-ease); }
-            .pl-btn-primary:hover { background: var(--pl-c-hover); }
+            .pl-btn-primary { background: ${color}; border: 0; border-radius: 6px; color: #fff; cursor: pointer; font-size: 12px; outline: none; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 6px 0; min-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 180ms ease; }
+            .pl-btn-primary:hover { opacity: 0.9; }
             .pl-btn-primary:active { filter: brightness(.9); }
-            .pl-btn-primary:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .pl-btn-primary:disabled { background: var(--pl-surface-alt); color: var(--pl-ink-disabled); cursor: not-allowed; filter: none; }
-            .pl-btn-success { background: var(--pl-success); animation: easeOpacity 1.2s 2; animation-fill-mode:forwards }
-            .pl-btn-info { background: var(--pl-info); }
-            /* ponytail: 助手设置 is a secondary action sitting next to 发送全部链接. As a filled
-               orange button it carried the same visual weight as the primary, so both read as
-               "do this". Outlined keeps it clickable but clearly not the main path. */
-            .pl-btn-warning { background: transparent; color: var(--pl-warning); border: 1px solid currentColor; }
-            .pl-btn-warning:hover { background: color-mix(in srgb, var(--pl-warning) 12%, transparent); }
-            .pl-btn-warning:active { background: color-mix(in srgb, var(--pl-warning) 20%, transparent); }
-            .pl-btn-warning:focus-visible { outline: 2px solid var(--pl-warning); outline-offset: 2px; }
-            .pl-btn-danger { background: var(--pl-danger); }
-            /* ponytail: the six host classes keep their per-pan geometry (margins, height, float)
-               because each page's toolbar needs its own offsets, but colour/radius/typography
-               and every interaction state now come from tokens — so the six read as one set
-               instead of five unrelated widgets. */
-            .ali-button, .xunlei-button { display: inline-flex; align-items: center; justify-content: center; border: 0 solid transparent; border-radius: var(--pl-radius); white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; touch-action: manipulation; transition: background var(--pl-dur) var(--pl-ease); color: #fff; background: var(--pl-c); padding: 0 12px; position: relative; cursor: pointer; height: 36px; }
-            .ali-button { margin-left: 20px; }
-            .xunlei-button { margin-left: 12px; }
-            .ali-button:hover, .xunlei-button:hover { background: var(--pl-c-hover); }
-            .ali-button:focus-visible, .xunlei-button:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .tianyi-button { margin-right: 20px; padding: 4px 12px; border-radius: var(--pl-radius); color: #fff; font-size: var(--pl-fs); border: 1px solid var(--pl-c); background: var(--pl-c); cursor: pointer; position: relative; transition: background var(--pl-dur) var(--pl-ease); }
-            .tianyi-button:hover { border-color: var(--pl-c-hover); background: var(--pl-c-hover); }
-            .tianyi-button:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .yidong-button { float: left; position: relative; margin: 20px 24px 20px 0; width: 98px; height: 36px; background: var(--pl-c); border-radius: var(--pl-radius); font-size: 14px; color: #fff; line-height: 36px; text-align: center; cursor: pointer; transition: background var(--pl-dur) var(--pl-ease); }
-            .yidong-button:hover { background: var(--pl-c-hover); }
-            .yidong-button:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .quark-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--pl-line); border-radius: var(--pl-radius); white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; color: var(--pl-ink); background: var(--pl-surface); margin-right: var(--pl-gap); padding: 0 14px; position: relative; cursor: pointer; height: 36px; transition: background var(--pl-dur) var(--pl-ease); }
-            .quark-button:hover { background: var(--pl-surface-alt); }
-            .quark-button:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
-            .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: var(--pl-ink); background: var(--pl-surface); z-index: 999; width: 102px; border: 1px solid var(--pl-line); border-radius: 10px; box-shadow: var(--pl-shadow-pop); }
-            .pl-dropdown-menu-item { min-height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--pl-dur) var(--pl-ease); }
-            .pl-dropdown-menu-item:hover { background-color: var(--pl-c-soft); }
+            .pl-btn-primary:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
+            .pl-btn-primary:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
+            .pl-btn-success { background: #55af28; animation: easeOpacity 1.2s 2; animation-fill-mode:forwards }
+            .pl-btn-info { background: #606266; }
+            .pl-btn-warning { background: transparent; color: #da9328; border: 1px solid currentColor; }
+            .pl-btn-warning:hover { background: color-mix(in srgb, #da9328 12%, transparent); }
+            .pl-btn-warning:active { background: color-mix(in srgb, #da9328 20%, transparent); }
+            .pl-btn-warning:focus-visible { outline: 2px solid #da9328; outline-offset: 2px; }
+            .pl-btn-danger { background: #cc3235; }
+            .ali-button { display: inline-flex; align-items: center; justify-content: center; border: 0 solid transparent; border-radius: 5px; white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; touch-action: manipulation; transition: background .3s ease; color: #fff; background: #637dff; margin-left: 20px; padding: 0 12px; position: relative; cursor: pointer; height: 32px; min-height: 32px; }
+            .ali-button:hover { background: #7a90ff; }
+            .ali-button:focus-visible { outline: 2px solid #637dff; outline-offset: 2px; }
+            .xunlei-button { display: inline-flex; align-items: center; justify-content: center; border: 0 solid transparent; border-radius: 5px; white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; touch-action: manipulation; transition: background .3s ease; color: #fff; background: #3f85ff; margin-left: 12px; padding: 0 12px; position: relative; cursor: pointer; height: 36px; min-height: 32px; }
+            .xunlei-button:hover { background: #619bff; }
+            .xunlei-button:focus-visible { outline: 2px solid #3f85ff; outline-offset: 2px; }
+            .tianyi-button { margin-right: 20px; padding: 4px 12px; border-radius: 4px; color: #fff; font-size: 12px; border: 1px solid #0073e3; background: #2b89ea; cursor: pointer; position: relative; min-height: 32px; transition: background .3s ease; }
+            .tianyi-button:hover { border-color: #1874d3; background: #3699ff; }
+            .tianyi-button:focus-visible { outline: 2px solid #2b89ea; outline-offset: 2px; }
+            .yidong-button { float: left; position: relative; margin: 20px 24px 20px 0; width: 98px; height: 36px; background: #3181f9; border-radius: 2px; font-size: 14px; color: #fff; line-height: 36px; text-align: center; cursor: pointer; min-height: 32px; transition: background .3s ease; }
+            .yidong-button:hover { background: #2d76e5; }
+            .yidong-button:focus-visible { outline: 2px solid #3181f9; outline-offset: 2px; }
+            .quark-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 8px; white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; color: #333; background: #fff; margin-right: 10px; padding: 0 14px; position: relative; cursor: pointer; height: 36px; min-height: 32px; transition: background .3s ease; }
+            .quark-button:hover { background: #f6f6f6; }
+            .quark-button:focus-visible { outline: 2px solid #3f85ff; outline-offset: 2px; }
+            .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: #303133; background: #fff; z-index: 999; width: 102px; border: 1px solid #e6e8eb; border-radius: 10px; box-shadow: 0 0 1px 1px rgb(28 28 32 / 5%), 0 8px 24px rgb(28 28 32 / 12%); }
+            .pl-dropdown-menu-item { min-height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 180ms ease; }
+            .pl-dropdown-menu-item:hover { background-color: rgba(132,133,141,0.08); }
             .pl-button .pl-dropdown-menu { display: none; }
-            /* focus-within: the menu is reachable by keyboard now that the trigger is a real
-               button — :hover alone left it mouse-only. */
             .pl-button:hover .pl-dropdown-menu, .pl-button:focus-within .pl-dropdown-menu { display: block!important; }
             .pl-button-init { opacity: 0.5; animation: easeInitOpacity 1.2s 3; animation-fill-mode:forwards }
              @keyframes easeInitOpacity { from { opacity: 0.5; } 50% { opacity: 1 } to { opacity: 0.5; } }
              @keyframes easeOpacity { from { opacity: 1; } 50% { opacity: 0.35 } to { opacity: 1; } }
-            .pl-extra { margin-top: var(--pl-gap); display: flex }
+            .pl-extra { margin-top: 10px; display: flex }
             .pl-extra button { flex: 1 }
-            /* ponytail: these two stay unprefixed — the pan pages' own CSS could not have invented
-               "tag-danger" or "pointer" for our markup, and the generated rows below still use
-               them. Renaming means touching 3 template strings for no isolation gain. */
-            .tag-danger { color: var(--pl-danger); margin: 0 5px; }
+            .tag-danger { color: #cc3235; margin: 0 5px; }
             .pointer { cursor: pointer; }
-            .pl-setting-label { display: flex; align-items: center; justify-content: space-between; padding-top: var(--pl-gap); }
+            .pl-setting-label { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; }
             .pl-label { flex: 0 0 100px; text-align: left; }
-            .pl-input { flex: 1; padding: 8px 10px; border: 1px solid var(--pl-line); border-radius: var(--pl-radius); font-size: 14px; background: var(--pl-surface); color: var(--pl-ink); transition: border-color var(--pl-dur) var(--pl-ease); }
-            .pl-input:focus { outline: none; border-color: var(--pl-c); }
-            .pl-color { flex: 1; display: flex; flex-wrap: wrap; margin-right: calc(var(--pl-gap) * -1); }
-            .pl-color-box { width: 35px; height: 35px; margin: var(--pl-gap) var(--pl-gap) 0 0; box-sizing: border-box; border: 1px solid var(--pl-line); cursor: pointer; }
-            .pl-color-box.checked { border: 3px dashed var(--pl-ink) !important }
-            .pl-color-box:focus-visible { outline: 2px solid var(--pl-c); outline-offset: 2px; }
+            .pl-input { flex: 1; padding: 8px 10px; border: 1px solid #e6e8eb; border-radius: 6px; font-size: 14px; background: #fff; color: #303133; transition: border-color 180ms ease; }
+            .pl-input:focus { outline: none; border-color: ${color}; }
+            .pl-color { flex: 1; display: flex; flex-wrap: wrap; margin-right: -10px; }
+            .pl-color-box { width: 35px; height: 35px; margin: 10px 10px 0 0; box-sizing: border-box; border: 1px solid #e6e8eb; cursor: pointer; }
+            .pl-color-box.checked { border: 3px dashed #303133 !important }
+            .pl-color-box:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
             .pl-close:focus { outline: 0; box-shadow: none; }
-            .pl-tooltip { position: absolute; color: #fff; max-width: 600px; font-size: var(--pl-fs); padding: 5px 10px; background: #333; border-radius: var(--pl-radius); z-index: var(--pl-z-tip); line-height: 1.3; display: none; word-break: break-all; }
+            .pl-tooltip { position: absolute; color: #fff; max-width: 600px; font-size: 12px; padding: 5px 10px; background: #333; border-radius: 6px; z-index: 110000; line-height: 1.3; display: none; word-break: break-all; }
              @keyframes load { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
             .pl-loading-box > div > div { position: absolute; border-radius: 50%; }
-            .pl-loading-box > div > div:nth-child(1) { top: 9px; left: 9px; width: 82px; height: 82px; background: var(--pl-surface); }
-            .pl-loading-box > div > div:nth-child(2) { top: 14px; left: 38px; width: 25px; height: 25px; background: var(--pl-ink-soft); animation: load 1s linear infinite; transform-origin: 12px 36px; }
+            .pl-loading-box > div > div:nth-child(1) { top: 9px; left: 9px; width: 82px; height: 82px; background: #fff; }
+            .pl-loading-box > div > div:nth-child(2) { top: 14px; left: 38px; width: 25px; height: 25px; background: #909399; animation: load 1s linear infinite; transform-origin: 12px 36px; }
             .pl-loading { width: 16px; height: 16px; display: inline-block; overflow: hidden; background: none; }
             .pl-loading-box { width: 100%; height: 100%; position: relative; transform: translateZ(0) scale(0.16); backface-visibility: hidden; transform-origin: 0 0; }
             .pl-loading-box div { box-sizing: content-box; }
-            /* ponytail: these two are not cosmetic — they keep the pan page from covering our
-               dialog. .swal2-container forces the swal layer above the host's own high z-index
-               toolbars (baidu's sits far above sweetalert2's default 1060, so without this its
-               buttons paint on top of the popup). body.swal2-height-auto stops swal from setting
-               an inline height on <body>, which would jump the pan layout while the dialog is
-               open. Both were accidentally dropped in the token rewrite; do not remove them. */
-            .swal2-container { z-index: var(--pl-z-dialog) !important; }
+            .swal2-container { z-index: 100000 !important; }
             body.swal2-height-auto { height: inherit !important; }
-            /* ponytail: reduced-motion is honoured by dropping the pulsing hint animation and the
-               menu's slide-free transitions, not by rewriting the markup that triggers them. */
-            /* ponytail: one rule for every inline icon. They are all <svg class="pl-ico">, so a
-               single flex parent aligns them — no per-button offsets, and adding an icon to a new
-               button needs no CSS. currentColor means each icon inherits its button's text
-               colour across hover/active/disabled/loading without a second rule. */
             .pl-ico { flex: 0 0 auto; width: 14px; height: 14px; margin-right: 5px; vertical-align: -2px; pointer-events: none; }
-            /* ponytail: .is-loading is a style-only hook — nothing sets it yet. It exists so a
-               later JS change can mark a button busy without redoing the animation, and so the
-               class is already styled if a template ever ships it. The ::before spinner is
-               transform-only, so it never reflows the button. */
             .pl-btn-primary.is-loading, .pl-item-btn.is-loading {
                 position: relative; color: transparent; pointer-events: none; }
             .pl-btn-primary.is-loading::before, .pl-item-btn.is-loading::before {
@@ -1006,11 +941,9 @@
                 width: 14px; height: 14px; margin: -7px 0 0 -7px;
                 border: 2px solid currentColor; border-top-color: transparent;
                 border-radius: 50%; color: #fff;
-                animation: plSpin var(--pl-spin) linear infinite; }
-            /* the inline icon is a child element, so colour:transparent on the button does not
-               reach it — hide it explicitly or the spinner lands on top of a visible glyph. */
+                animation: plSpin 700ms linear infinite; }
             .pl-btn-primary.is-loading > .pl-ico, .pl-item-btn.is-loading > .pl-ico { display: none; }
-            .pl-btn-warning.is-loading::before { color: var(--pl-warning); }
+            .pl-btn-warning.is-loading::before { color: #da9328; }
              @keyframes plSpin { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
             @media (prefers-reduced-motion: reduce) {
                 .pl-button-init, .pl-btn-success, .pl-btn-primary.is-loading::before,

@@ -1556,45 +1556,18 @@
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api-browser', async (e) => {
                 e.preventDefault();
-                let o = _factory(e);
-                let $width = o.item.find('.pl-progress-inner');
-                let $text = o.item.find('.pl-progress-inner-text');
-                let filename = o.link[0].dataset.filename;
-                let index = o.link[0].dataset.index;
-                _reset(index);
-                // ponytail: ali's config has no ua, so send the Referer its CDN checks instead of
-                // baidu's User-Agent. Everything else is baidu's handler verbatim.
-                base.download(o.link[0].dataset.link, {"Referer": location.origin}, {filename, index}).catch((err) => {
-                    clearInterval(ins[index]);
-                    o.tip.text(err && err.message ? '下载失败：' + err.message : '下载失败').show();
-                    o.link.show();
-                    _reset(index);
-                });
-                ins[index] = setInterval(() => {
-                    let prog = +progress[index] || 0;
-                    let isIDM = idm[index] || false;
-                    if (isIDM) {
-                        o.tip.hide();
-                        o.progress.hide();
-                        o.link.text('已成功唤起IDM，请查看IDM下载框！').animate({opacity: '0.5'}, "slow").show();
-                        clearInterval(ins[index]);
-                        idm[index] = false;
-                    } else {
-                        o.link.hide();
-                        o.tip.hide();
-                        o.progress.show();
-                        $width.css('width', prog + '%');
-                        $text.text(prog + '%');
-                        if (prog === 100) {
-                            clearInterval(ins[index]);
-                            progress[index] = 0;
-                            o.item.find('.pl-progress-stop').hide();
-                            o.item.find('.pl-progress-tip').html('下载完成，正在弹出浏览器下载框！');
-                        }
-                    }
-                }, 500);
+                let href = e.currentTarget.dataset.link;
+                if (!/^https?:/.test(href)) { return message.error('提示：下载链接无效！'); }
+                // ponytail: no base.download() here. It opens with a Range probe and throws
+                // "该链接不支持分片下载" when the CDN refuses, which is always true for ali's
+                // dl1.aliyundrive.cloud links. The hidden iframe lets the browser (or IDM, via
+                // its extension) fetch the URL directly — no Range, no chunking, no false error.
+                let iframe = document.getElementById('downloadIframe');
+                if (iframe) iframe.src = href;
+                else $('#downloadIframe').attr('src', href);
+                message.success('已唤起下载，请查看浏览器或 IDM 下载框！');
             });
             doc.on('click', '.listener-how', async (e) => {
                 let o = _factory(e);
@@ -1638,7 +1611,11 @@
                     return message.error('提示：未获取到下载链接，请刷新页面后重试！');
                 }
                 _reset(index);
-                o.link.hide();
+                // ponytail: _factory's .link is item.find('.pl-item-link'), which now matches
+                // BOTH buttons — hiding o.link would hide 普通下载 too and never restore it.
+                // Target just the clicked button, and restore both on the way out.
+                let $btn = $(e.currentTarget);
+                $btn.hide();
                 o.tip.hide();
                 o.progress.show();
                 $tip.text('正在通过文件流下载…');
@@ -1655,7 +1632,7 @@
                     setTimeout(() => {
                         if (ins[index] === failed) {
                             o.progress.hide();
-                            o.link.show();
+                            o.item.find('.pl-item-link').show();
                         }
                     }, 3000);
                 });
@@ -1669,7 +1646,7 @@
                         $tip.text('下载完成，已弹出保存框！');
                         setTimeout(() => {
                             o.progress.hide();
-                            o.link.show();
+                            o.item.find('.pl-item-link').show();
                         }, 2500);
                     }
                 }, 500);
@@ -1821,15 +1798,17 @@
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
                 if (mode === 'api') {
-                    // ponytail: the row now matches baidu's — one <a> showing the URL, plus the
-                    // IDM hint bar and the stop/tip/how progress spans, all of which ali lacked.
-                    // 增强下载(文件流) is a separate capability (streams the file through the
-                    // script instead of handing the URL to the downloader), so it stays as a
-                    // second button rather than being folded into the baidu shape.
+                    // ponytail: ali's CDN rejects Range, so base.download() (which probes Range
+                    // first and throws "该链接不支持分片下载") can only ever fail here. 普通下载
+                    // therefore hands the URL to the hidden iframe and lets the browser/downloader
+                    // fetch it — no Range, no chunking. 增强下载 is the opt-in path that does
+                    // stream through the script, and it is the one that needs Range. IDM hint bar
+                    // and the stop/tip/how spans come from baidu so the row looks the same.
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <button class="pl-item-link listener-link-api-browser pl-btn-primary pl-btn-info" data-filename="${filename}" data-link="${base.esc(dlink)}">普通下载</button>
                                 <button class="pl-item-link listener-link-api-blob pl-btn-primary" data-filename="${filename}" data-link="${base.esc(dlink)}" data-index="${i}">增强下载(文件流)</button>
+                                <div class="pl-item-btn listener-link-api-btn" data-filename="${filename}">复制文件名</div>
                                 <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div>
                                 <div class="pl-item-progress" style="display: none">
                                     <div class="pl-progress">

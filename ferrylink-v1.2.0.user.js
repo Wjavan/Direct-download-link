@@ -775,17 +775,14 @@
                     GM_xmlhttpRequest({
                         method: "POST", url, data,
                         headers: { "Content-Type": "text/plain" },
-                        // ponytail: withCredentials is the missing piece. LinkSwift's
-                        // xmlHttpRequest wrapper forces { withCredentials: true } on every
-                        // request, and IDM's capture endpoint silently drops the request
-                        // without it — 15s timeout, no reply, every time. The credential
-                        // itself is irrelevant (localhost, no cookies), but IDM's listener
-                        // appears to gate on the CORS cred flag before responding.
+                        // ponytail: withCredentials is required — LinkSwift's
+                        // xmlHttpRequest wrapper forces it on every request. IDM's
+                        // capture listener silently drops the request without it.
                         withCredentials: true,
                         timeout: 15000,
-                        onload: (r) => { console.log('[FerryLink IDM] onload', { status: r.status, statusText: r.statusText, responseText: (r.responseText||'').slice(0,200), response: String(r.response||'').slice(0,200) }); resolve(r.responseText || r.response || ''); },
-                        ontimeout: () => { console.log('[FerryLink IDM] ontimeout (15s)'); resolve(''); },
-                        onerror: (e) => { console.log('[FerryLink IDM] onerror', { error: String(e.error||e), readyState: e.readyState, status: e.status, finalUrl: e.finalUrl }); resolve(''); },
+                        onload: (r) => resolve(r.responseText || r.response || ''),
+                        ontimeout: () => resolve(''),
+                        onerror: () => resolve(''),
                     });
                 });
                 const res = raw || false;
@@ -796,8 +793,6 @@
                 // reported "IDM 未响应" forever. Advancing unconditionally costs nothing, since a
                 // seq is only ever compared against the last one IDM saw.
                 this.sendLinkToIDM.seq++;
-                // DEBUG: log the full exchange so we can compare with LinkSwift
-                console.log('[FerryLink IDM]', { url, seq, data, res: res === false ? '(no response)' : String(res).slice(0, 200) });
                 if (res && String(res).endsWith(`${seq}:3;`)) {
                     return 'success';
                 }

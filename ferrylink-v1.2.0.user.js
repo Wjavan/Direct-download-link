@@ -587,6 +587,20 @@
                 $btn.html(orig.replace('复制链接', '已复制'));
                 setTimeout(() => { $btn.html(orig); }, 1500);
             });
+            doc.on('click', '.listener-link-api-btn', async (e) => {
+                base.setClipboard(e.currentTarget.dataset.filename);
+                const $btn = $(e.currentTarget);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制文件名', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
+            });
+            doc.on('click', '.listener-link-api-btn', async (e) => {
+                base.setClipboard(e.currentTarget.dataset.filename);
+                const $btn = $(e.currentTarget);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制文件名', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
+            });
             doc.on('mouseenter mouseleave', '.listener-tip', (e) => {
                 if (e.type === 'mouseenter') {
                     let filename = e.currentTarget.innerText;
@@ -1476,13 +1490,7 @@
         },
         addPageListener() {
             // this was only registered in the xunlei adapter, so on the alipan page the
-            doc.on('click', '.listener-link-api-btn', async (e) => {
-                base.setClipboard(e.target.dataset.filename);
-                const $btn = $(e.target);
-                const orig = $btn.html();
-                $btn.html(orig.replace('复制文件名', '已复制'));
-                setTimeout(() => { $btn.html(orig); }, 1500);
-            });
+
 
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
@@ -2165,13 +2173,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
 base.iframeDownload(e.currentTarget.dataset.link);
                 $(e.currentTarget).text('已触发下载，若未弹出请检查浏览器下载设置').animate({opacity: '0.5'}, "slow");
             });
-            doc.on('click', '.listener-link-api-btn', async (e) => {
-                base.setClipboard(e.target.dataset.filename);
-                const $btn = $(e.target);
-                const orig = $btn.html();
-                $btn.html(orig.replace('复制文件名', '已复制'));
-                setTimeout(() => { $btn.html(orig); }, 1500);
-            });
+
 
             doc.on('click', '.listener-link-bc-btn', async (e) => {
                 let mirror = base.getMirrorList(e.target.dataset.dlink, pan.mirror);

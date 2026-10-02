@@ -1247,6 +1247,9 @@
             if (res.errno === 0) {
                 let files = (res.list || []).filter(v => +v.isdir !== 1);
                 if (!files.length) {
+                    // only retry with a fresh token when the selection actually had files —
+                    // an all-folder selection returns an empty list too, and deleting the
+                    // token here would force a pointless OAuth popup on the next click.
                     if (fidList !== encodeURIComponent('[]') && maxRequestTime >= 1) {
                         base.deleteValue('baidu_access_token');
                         base.deleteValue('baidu_access_token_bduss');

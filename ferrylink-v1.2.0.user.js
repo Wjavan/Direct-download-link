@@ -480,9 +480,7 @@
                 value: ''
             }, {
                 name: 'setting_rpc_dir',
-                // 'C:' only exists on Windows — on macOS/Linux aria2 would fail to
-                // write there. Empty lets aria2 use its own configured download dir.
-                value: ''
+                value: 'C:'
             }, {
                 name: 'setting_terminal_type',
                 value: /Mac/i.test(navigator.platform) ? 'mt'

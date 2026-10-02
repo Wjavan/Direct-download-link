@@ -13,7 +13,7 @@
 
 **👉 一个免费开源的网盘下载助手 👈**
 
-【网盘直链下载助手】是一款免费开源 **获取网盘文件真实下载地址** 的油猴脚本，支持 Windows、Mac、Linux 多平台，兼容 IDM、XDown、Aria2、NDM、Motrix、终端等下载器，支持 HTTP、JSON-RPC、cURL 多种下载协议。
+【FerryLink】是一款免费开源 **获取网盘文件真实下载地址** 的油猴脚本，支持 Windows、Mac、Linux 多平台，兼容 IDM、XDown、Aria2、NDM、Motrix、终端等下载器，支持 HTTP、JSON-RPC、cURL 多种下载协议。
 
 > ⚠️ **建议配合网盘超级会员使用** — 本助手仅解析下载链接，不突破网盘限速
 

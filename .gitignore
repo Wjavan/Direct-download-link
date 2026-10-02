@@ -1,10 +1,4 @@
-# 个人脚本与开发工具产物，不参与 FerryLink 分发
-Direct-download-link/
+# 与 FerryLink 无关的个人文件，不参与分发
 pushplus_notify/
 备考/
-nul
-netdisk-download-helper-v1.1.2-fixed.user.js
-check_network_layer.py
-check_xss_source.py
-selector_regression.py
 fund_mapping.json

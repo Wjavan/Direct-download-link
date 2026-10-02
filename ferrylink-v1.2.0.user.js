@@ -51,7 +51,7 @@
 // ==/UserScript==
 (function () {
     'use strict';
-    // ponytail: the three @require libs load from a CDN. If unpkg is unreachable (offline,
+    // the three @require libs load from a CDN. If unpkg is unreachable (offline,
     // blocked network) the old code died on `$(document)` with a bare ReferenceError and the
     // user saw nothing at all. Fail with a visible banner instead.
     if (typeof $ === 'undefined' || typeof Swal === 'undefined') {
@@ -134,12 +134,7 @@
         deleteValue(name) {
             GM_deleteValue(name);
         },
-        // ponytail: alipan keeps rotating its own localStorage token (new access_token +
-        // refresh_token whenever it feels like it). An earlier version snapshotted that into GM
-        // storage once and deleted the page copy, so the script kept replaying a stale
-        // access_token and ali answered "not login" while the page itself stayed logged in.
-        // Read the live value every time and only fall back to the GM copy when storage is
-        // unavailable (GM-only environments). Nothing is written back or removed.
+        // alipan keeps rotating its own localStorage token (new access_token +
         getStorage(key) {
             let v = null;
             try {
@@ -152,10 +147,7 @@
                 return v;
             }
         },
-        // ponytail: ali access tokens are short-lived. When the stored one is at/past its
-        // expiry, trade refresh_token for a fresh pair and write the result back to
-        // localStorage (where ali's own code reads it) plus GM storage as a fallback.
-        // Idempotent and failure-tolerant: on any error the caller keeps using the old token.
+        // ali access tokens are short-lived. When the stored one is at/past its
         async refreshAliToken(tk) {
             if (!tk || !tk.refresh_token) return tk;
             const now = Date.now();
@@ -181,9 +173,7 @@
             }
         },
         setStorage(key, value) {
-            // ponytail: alipan reads its own token straight out of localStorage, so a refreshed
-            // token written only to GM storage would be ignored on the next read (getStorage
-            // prefers localStorage). Write both; the two hold the same JSON.
+            // alipan reads its own token straight out of localStorage, so a refreshed
             let payload = value;
             if (this.isType(value) === 'object' || this.isType(value) === 'array') {
                 payload = JSON.stringify(value);
@@ -191,10 +181,7 @@
             try { localStorage.setItem(key, payload); } catch (e) { /* storage unavailable */ }
             return GM_setValue(key, payload);
         },
-        // ponytail: one-shot upgrade step. Idempotent (guarded by a version marker), never
         // throws (wrapped), and a failure just means we retry next load rather than blocking
-        // startup. Two jobs: clear keys orphaned by the share-page removal, and normalise
-        // setting_rpc_dir away from the old Windows-only 'C:' default.
         migrate() {
             const MARK = 'ferrylink_migrated_version';
             const VERSION = '1.2.0';
@@ -215,7 +202,7 @@
             GM_setClipboard(text, 'text');
         },
         e(str) {
-                        // ponytail: unescape is deprecated; TextEncoder is the modern equivalent
+                        // unescape is deprecated; TextEncoder is the modern equivalent
                         // but btoa still needs a binary string, so use the surrogate-safe form.
                         return btoa(Array.from(new TextEncoder().encode(str), c => String.fromCharCode(c)).join(''));
                     },
@@ -255,14 +242,7 @@
         fixFilename(name) {
             return String(name || '').replace(/[!?&|`"'*\/:<>\\$;(){}\n\r\x00-\x1F\x7F]/g, '_');
         },
-        // ponytail: sanitize before a filename enters an aria2 RPC out/dir field. aria2
-        // resolves ../ and absolute paths, so a hostile filename can write anywhere the
-        // aria2 user can reach \u2014 strip control chars, path separators and traversal.
-        // ponytail: the RPC host comes from user settings, so a stray value sends the
-        // download link (and BDUSS on baidu) to a third party. Default to loopback only;
-        // allow private ranges because Motrix/aria2 are commonly on the LAN.
-        // ponytail: a link from the drive API lands straight in href=, so javascript:/
-        // data: URLs would execute in the page origin. Allow only http(s).
+        // sanitize before a filename enters an aria2 RPC out/dir field. aria2
         safeHttpUrl(url) {
             const u = String(url || '');
             if (!/^https?:\/\//i.test(u)) return '';
@@ -288,7 +268,7 @@
                 .replace(/^\.+/, '_')
                 .slice(0, 255);
         },
-        // ponytail: shared by tianyi + yidong; they were defined only on yidong, so
+        // shared by tianyi + yidong; they were defined only on yidong, so
         // `base.getSign()` in tianyi was undefined and every tianyi download threw.
         getRandomString(len) {
             len = len || 16;
@@ -301,7 +281,7 @@
             return pwd;
         },
         getSign(e, t, a, n) {
-            // ponytail: `i = ""` was an implicit global, which throws ReferenceError under the
+            // `i = ""` was an implicit global, which throws ReferenceError under the
             // IIFE's 'use strict' — every yidong download died here. Declare it locally.
             let i = "";
             if (t) {
@@ -333,7 +313,7 @@
                                 data = JSON.stringify(data);
                             }
                             return new Promise((resolve, reject) => {
-                                // ponytail: tracked so _resetData() can abort it; an untracked request
+                                // tracked so _resetData() can abort it; an untracked request
                                 // holds its socket and starves every later one.
                                 const key = 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
                                 const clear = () => { delete request[key]; };
@@ -345,11 +325,7 @@
                                     onload: (res) => {
                                         clear();
                                         if (type === 'blob') { resolve(res); return; }
-                                        // ponytail: a 4xx body is still "loaded", so resolving it
-                                        // let an error object flow downstream as if it were data —
-                                        // e.g. ali's {code:'AccessTokenInvalid'} arrived with no
-                                        // .url and only surfaced much later as "下载链接无效".
-                                        // Reject with the server's own message so callers report it.
+                                        // a 4xx body is still "loaded", so resolving it
                                         if (res.status >= 400) {
                                             const body = res.response || res.responseText || '';
                                             let msg = 'HTTP ' + res.status;
@@ -372,7 +348,7 @@
         get(url, headers, type, extra) {
             headers = Object.assign({ 'Referer': location.origin }, headers);
             return new Promise((resolve, reject) => {
-                // ponytail: track from the start, not in onloadstart — if the request
+                // track from the start, not in onloadstart — if the request
                 // errors before onloadstart fires, it's stuck and can't be aborted.
                 const key = 'get_' + (extra && extra.index != null ? extra.index : Date.now());
                 const clear = () => { delete request[key]; };
@@ -406,9 +382,7 @@
         getFinalUrl(url, headers) {
             headers = Object.assign({ 'Referer': location.origin }, headers);
             return new Promise((resolve, reject) => {
-                // ponytail: a plain GET streamed the whole body (hundreds of MB) just to read
-                // finalUrl. HEAD avoids that but some CDNs reject it, so fall back to a 1-byte
-                // ranged GET and settle immediately on its 302/206 response.
+                // a plain GET streamed the whole body (hundreds of MB) just to read
                 const key = 'finalurl_' + Date.now();
                 const done = (v) => { delete request[key]; resolve(v); };
                 request[key] = GM_xmlhttpRequest({
@@ -506,23 +480,18 @@
                 value: ''
             }, {
                 name: 'setting_rpc_dir',
-                // ponytail: 'C:' only exists on Windows — on macOS/Linux aria2 would fail to
+                // 'C:' only exists on Windows — on macOS/Linux aria2 would fail to
                 // write there. Empty lets aria2 use its own configured download dir.
                 value: ''
             }, {
                 name: 'setting_terminal_type',
-                // ponytail: default to the host OS shell instead of always assuming Windows CMD.
                 value: /Mac/i.test(navigator.platform) ? 'mt'
                      : /Win/i.test(navigator.platform) ? 'wc' : 'lt'
             }, {
                 name: 'setting_theme_color',
                 value: '#09AAFF'
             }, {
-                // ponytail: IDM's capture endpoint is a fixed local port (1001) with a client id.
-                // The id is part of the URL path, so a second browser profile in the same IDM would
-                // need a different one — hence a list, matching LinkSwift's shape rather than a
-                // flat string. Only the default entry is ever used today; the array exists so
-                // adding a second id later does not need a storage migration.
+                // IDM's capture endpoint is a fixed local port (1001) with a client id.
                 name: 'setting_idm_rpc',
                 value: [{
                     id: '1',
@@ -629,17 +598,7 @@
                 }
             });
 
-            // ponytail: one registration covers all six adapters — every api row renders this
-            // button, and the raw link beside it still uses iframeDownload() for plain browser
-            // downloads.
-            //
-            // This pushes to IDM's capture protocol instead of starting a browser request. That is
-            // the whole point: IDM's extension decides whether to take over a request by the file
-            // extension in the URL *path*, and xunlei's signed link is /download/?…&fext=rar — no
-            // extension in the path, so the extension passed it straight to the browser. Asking IDM
-            // directly means the extension and filename travel as explicit fields, and the URL
-            // never has to be rewritten (rewriting it breaks the signature — measured: HTTP 206
-            // for the original, "Failed to fetch" once a fake suffix was inserted).
+            // one registration covers all six adapters — every api row renders this
             doc.on('click', '.listener-idm', async (e) => {
                 e.preventDefault();
                 const btn = $(e.currentTarget);
@@ -648,19 +607,12 @@
                     message.error('提示：下载链接无效！');
                     return;
                 }
-                // ponytail: guard against a second click while the first is still in flight —
-                // sendLinkToIDM queues rather than rejects, so a double-click would silently send
-                // the same file twice.
+                // guard against a second click while the first is still in flight —
                 if (btn.attr('data-processing') === 'true') return;
                 btn.attr('data-processing', 'true');
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
-                // ponytail: no custom headers. standHeaders adds defaults (UA, Origin, Referer
                 // from the current page), and those were fine for the other five pans. But
-                // xunlei's CDN appears to reject IDM's request when it carries a Referer from
-                // pan.xunlei.com — the download starts then errors. Passing no custom headers
-                // means standHeaders still adds its defaults, but at least we're not doubling
-                // up the Referer. LinkSwift's xunlei path also passes no headers.
                 const res = await base.sendLinkToIDM(href, btn.data('filename'), 0);
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
@@ -687,31 +639,19 @@
             $div.append($iframe);
             $('body').append($div);
         },
-        // ponytail: all five adapters download an api link the same way — hand the URL to the
-        // hidden iframe and let the browser or IDM fetch it. Four of them did that inline with no
-        // validation; only ali checked the scheme, so a bad dlink navigated the iframe elsewhere
-        // and only one adapter reported it. One guarded call site beats five unchecked copies.
+        // all five adapters download an api link the same way — hand the URL to the
         iframeDownload(link) {
             if (!/^https?:\/\//i.test(link)) {
                 message.error('提示：下载链接无效！');
                 return false;
             }
-            // ponytail: create it here, not at each adapter's addButton — a missing iframe makes
-            // the next line a no-op on an empty jQuery set, and the click fails silently. baidu
-            // hit exactly that when it switched off GM_xmlhttpRequest.
+            // create it here, not at each adapter's addButton — a missing iframe makes
             this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
             return true;
         },
 
-        // ponytail: IDM's capture protocol, not an extension sniff. IDM listens on 127.0.0.1:1001
-        // and accepts a hand-built message that names the file, its extension and its size outright
-        // — so a signed CDN URL with no extension in its path (xunlei's /download/?…&fext=rar) is
-        // no obstacle. Every earlier attempt (hidden iframe, window.open, appending a fake
-        // extension to the path) tried to coax a browser request that IDM's extension would
-        // choose to grab, and IDM matches on the path suffix, so all three failed. This asks IDM
-        // directly instead. Wire format and the three quirks below follow LinkSwift's
-        // sendLinkToIDM(), which is the only known-good implementation of this protocol.
+        // IDM's capture protocol, not an extension sniff. IDM listens on 127.0.0.1:1001
         standHeaders(headers = {}, addDefault = false) {
             if (!headers) return {};
             if (typeof headers === 'string') {
@@ -743,9 +683,7 @@
         async sendLinkToIDM(link, filename, filesize, headers = {}) {
             const list = base.getValue('setting_idm_rpc') || [];
             const rpc = list.find(i => i && i.default) || list[0] || { id: '1' };
-            // ponytail: serialised through a promise chain. IDM answers one MSG at a time and
-            // mismatched seq numbers are silently dropped, so overlapping clicks lose downloads
-            // without any error — one in flight at a time is the fix.
+            // serialised through a promise chain. IDM answers one MSG at a time and
             if (!this.sendLinkToIDM.lock) this.sendLinkToIDM.lock = Promise.resolve();
             return this.sendLinkToIDM.lock = this.sendLinkToIDM.lock.then(async () => {
                 headers = this.standHeaders(headers);
@@ -773,22 +711,13 @@
                     format(122, 4)
                 ];
                 // quirk 3: the envelope is undocumented. Read left to right:
-                // seq, request kind 13, flags 1, 10241 (use the file info we supply),
-                // an offset that must exceed seq, 0, timestamp, 0, 1, 2 (fetch info from the
-                // server), file size, then the field list.
-                // ponytail: 10241 + size=0 is the only combination that actually downloaded.
                 const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:0:0,${fields.join(',')};`;
-                // ponytail: bypass base.post — it rejects on res.status >= 400 and parses as
-                // JSON, but IDM's capture protocol returns a non-standard body (MSG#…:3;), and
-                // may return a status code base.post treats as an error. Use GM_xmlhttpRequest
-                // directly so we see the raw response regardless of status.
+                // bypass base.post — it rejects on res.status >= 400 and parses as
                 const raw = await new Promise((resolve) => {
                     GM_xmlhttpRequest({
                         method: "POST", url, data,
                         headers: { "Content-Type": "text/plain" },
-                        // ponytail: withCredentials is required — LinkSwift's
-                        // xmlHttpRequest wrapper forces it on every request. IDM's
-                        // capture listener silently drops the request without it.
+                        // withCredentials is required — LinkSwift's
                         withCredentials: true,
                         timeout: 15000,
                         onload: (r) => resolve(r.responseText || r.response || ''),
@@ -797,13 +726,7 @@
                     });
                 });
                 const res = raw || false;
-                // DEBUG: show what IDM actually replied
-                // DEBUG
                 // replay and drops it without answering, so a failed send used to wedge the
-                // counter: the first attempt (rejected, e.g. the wrong 10241 size flag) burned
-                // seq=1, and every attempt after that reused 1 and got silence — the button then
-                // reported "IDM 未响应" forever. Advancing unconditionally costs nothing, since a
-                // seq is only ever compared against the last one IDM saw.
                 this.sendLinkToIDM.seq++;
                 if (res && String(res).endsWith('3;')) {
                     return 'success';
@@ -1122,18 +1045,13 @@
                                 Swal.close();
                                 message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                             } finally {
-                                // ponytail: covers every early-return path in getPCSLink, so a missed
-                                // Swal.close() there can no longer strand the spinner and lock the page.
-                                // No-op when the download dialog already replaced it.
+                                // covers every early-return path in getPCSLink, so a missed
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                // ponytail: the hidden iframe makes the BROWSER request the dlink, which is the
-                // only way IDM's extension sees it. The previous base.download() path fetched every
-                // chunk through GM_xmlhttpRequest and saved a Blob via a[download] — invisible to
-                // IDM, so baidu alone could never hand a file to the download manager.
+                // the hidden iframe makes the BROWSER request the dlink, which is the
                 base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-back', async (e) => {
@@ -1216,7 +1134,7 @@
                     }
                 }, 1000);
             });
-            // ponytail: HEAD/ranged-GET can extract the token without a tab when the
+            // HEAD/ranged-GET can extract the token without a tab when the
             // user has already authorised the app — Baidu 302s straight to login_success.
             try {
                 if (base.getFinalUrl) {
@@ -1244,11 +1162,7 @@
                 }
             } catch (e) {
             }
-            // ponytail: hidden iframe can't auto-click the "authorise" button because the
-            // script doesn't run on openapi.baidu.com/oauth/authorize (no @match), and the
-            // iframe is display:none so the user can't click it either. GM_openInTab opens
-            // a real tab where initAuthorize() runs, auto-clicks authorise, captures the
-            // token on login_success, then closes the tab.
+            // GM_openInTab: iframe can't click authorise (no @match on oauth page)
             base.deleteValue('baidu_access_token');
             GM_openInTab(pan.pcs[3], {active: false, insert: true, setParent: true});
             let token = await waitForToken(60);
@@ -1452,12 +1366,12 @@
             try {
                 let res = await base.post(url, rpcData, {"User-Agent": pan.ua}, '');
                 if (res.result) return 'success';
-                // ponytail: aria2 answered but refused — surface its own message so the user
+                // aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
             } catch (e) {
-                // ponytail: a throw here is almost always "nothing is listening on that port".
+                // a throw here is almost always "nothing is listening on that port".
                 message.error('无法连接 RPC（' + rpc.domain + ':' + rpc.port + '），请确认下载器已启动且 RPC 服务已开启');
                 return 'fail';
             }
@@ -1537,7 +1451,7 @@
     let ali = {
         convertLinkToAria(link, filename, ua) {
                     filename = base.fixFilename(filename);
-                    // ponytail: ali's CDN 403s without a browser User-Agent, so aria2 needs the header
+                    // ali's CDN 403s without a browser User-Agent, so aria2 needs the header
                     // too — otherwise the generated command fails where the in-script download now works.
                     return encodeURIComponent(`aria2c "${link}" --out "${filename}" -x 16 -s 16 -k 1M --header "Referer: https://www.aliyundrive.com/" --header "User-Agent: ${ua || navigator.userAgent}"`);
                 },
@@ -1548,13 +1462,11 @@
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
-            // ponytail: -A is curl's User-Agent flag; ali's CDN 403s without it.
+            // -A is curl's User-Agent flag; ali's CDN 403s without it.
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/" -A "${ua || navigator.userAgent}"`);
         },
         addPageListener() {
-            // ponytail: this was only registered in the xunlei adapter, so on the alipan page the
-            // 复制文件名 button had no handler (one adapter activates per page). Identical body,
-            // so the lazy fix is a copy here rather than hoisting a shared registration.
+            // this was only registered in the xunlei adapter, so on the alipan page the
             doc.on('click', '.listener-link-api-btn', async (e) => {
                 base.setClipboard(e.target.dataset.filename);
                 const $btn = $(e.target);
@@ -1571,7 +1483,6 @@
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // ponytail: covers every early-return path in getPCSLink, so a missed
                             // Swal.close() there can no longer strand the spinner and lock the page.
                             // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
@@ -1641,7 +1552,7 @@
             let $toolWrap;
             let $button = $(`<div class="ali-button pl-button"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M853.333 938.667H170.667a85.333 85.333 0 0 1-85.334-85.334v-384A85.333 85.333 0 0 1 170.667 384H288a32 32 0 0 1 0 64H170.667a21.333 21.333 0 0 0-21.334 21.333v384a21.333 21.333 0 0 0 21.334 21.334h682.666a21.333 21.333 0 0 0 21.334-21.334v-384A21.333 21.333 0 0 0 853.333 448H736a32 32 0 0 1 0-64h117.333a85.333 85.333 0 0 1 85.334 85.333v384a85.333 85.333 0 0 1-85.334 85.334z" fill="#fff"/><path d="M715.03 543.552a32.81 32.81 0 0 0-46.251 0L554.005 657.813v-540.48a32 32 0 0 0-64 0v539.734L375.893 543.488a32.79 32.79 0 0 0-46.229 0 32.427 32.427 0 0 0 0 46.037l169.557 168.811a32.81 32.81 0 0 0 46.251 0l169.557-168.81a32.47 32.47 0 0 0 0-45.974z" fill="#FF9C00"/></svg><span>下载助手</span><ul class="pl-dropdown-menu"><li class="pl-dropdown-menu-item pl-button-mode" data-mode="api">API下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="aria" >Aria下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="rpc">RPC下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="curl">cURL下载</li><li class="pl-dropdown-menu-item pl-button-mode" data-mode="bc" >BC下载</li><li class="pl-dropdown-menu-item listener-open-setting">助手设置</li></ul></div>`);
             if (pt === 'home') {
-                // ponytail: CSS module class prefixes change between alipan builds.
+                // CSS module class prefixes change between alipan builds.
                 // Try the config selector first, then fall back to broader patterns.
                 const fallbacks = [
                     pan.btn.home,
@@ -1693,9 +1604,7 @@
                         if (res && res.url) selectList[i].downloadUrl = res.url;
                     });
                 } catch (e) {
-                    // ponytail: base.post now rejects on 4xx with the server's own message, so an
-                    // expired token reads as "Token过期" instead of silently leaving downloadUrl
-                    // undefined and surfacing later as the misleading "下载链接无效".
+                    // base.post now rejects on 4xx with the server's own message, so an
                     Swal.close();
                     const m = (e && e.message) || '';
                     if (/AccessTokenInvalid|token/i.test(m)) {
@@ -1788,10 +1697,7 @@
                 return 'fail';
             }
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
-                        // ponytail: ali's CDN 403s any request without a browser User-Agent — it reads as bot
-                        // traffic. Without this header aria2 gets 403 and the task silently stalls, and RPC is
-                        // otherwise the fastest path available. navigator.userAgent is the same value
-                        // LinkSwift sends via standHeaders().
+                        // ali's CDN 403s any request without a browser User-Agent — it reads as bot
                         const UA = navigator.userAgent;
                         let rpcData = {
                             id: new Date().getTime(),
@@ -1806,12 +1712,10 @@
                         try {
                             let res = await base.post(url, rpcData, {"Referer": "https://www.aliyundrive.com/"}, '');
                 if (res.result) return 'success';
-                // ponytail: aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
             } catch (e) {
-                // ponytail: a throw here is almost always "nothing is listening on that port".
                 message.error('无法连接 RPC（' + rpc.domain + ':' + rpc.port + '），请确认下载器已启动且 RPC 服务已开启');
                 return 'fail';
             }
@@ -1838,16 +1742,10 @@
                     return selectedList;
                 }
 
-                // ponytail: grid view (the only view alipan ships now) has no selectedKeys
-                // anywhere in its React tree — CDP-verified across 990 fibers. Selection is
-                // only observable as a checked checkbox per card, so match cards back to
-                // dataSource by title. No fiber walking, so no mount-order dependency.
+                // grid view (the only view alipan ships now) has no selectedKeys
                 let gridDom = document.querySelector(pan.dom.grid);
                 if (!gridDom) return [];
-                // ponytail: traverseUp must stay 0 here. CDP-verified on alipan 6.8.12 —
-                // the grid host fiber itself carries dataSource (5 items), but climbing
-                // one level up lands on a wrapper whose dataSource is an empty array,
-                // which made every selection look like "nothing checked".
+                // traverseUp must stay 0 here. CDP-verified on alipan 6.8.12 —
                 let gridReact = base.findReact(gridDom, 0);
                 if (!gridReact) return [];
                 let dataSource = (gridReact.pendingProps || {}).dataSource || [];
@@ -1928,7 +1826,6 @@
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // ponytail: covers every early-return path in getPCSLink, so a missed
                             // Swal.close() there can no longer strand the spinner and lock the page.
                             // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
@@ -2150,12 +2047,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
             try {
                 let res = await base.post(url, rpcData, {}, '');
                 if (res.result) return 'success';
-                // ponytail: aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
             } catch (e) {
-                // ponytail: a throw here is almost always "nothing is listening on that port".
                 message.error('无法连接 RPC（' + rpc.domain + ':' + rpc.port + '），请确认下载器已启动且 RPC 服务已开启');
                 return 'fail';
             }
@@ -2238,7 +2133,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // ponytail: covers every early-return path in getPCSLink, so a missed
                             // Swal.close() there can no longer strand the spinner and lock the page.
                             // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
@@ -2551,12 +2445,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
             try {
                 let res = await base.post(url, rpcData, {}, '');
                 if (res.result) return 'success';
-                // ponytail: aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
             } catch (e) {
-                // ponytail: a throw here is almost always "nothing is listening on that port".
                 message.error('无法连接 RPC（' + rpc.domain + ':' + rpc.port + '），请确认下载器已启动且 RPC 服务已开启');
                 return 'fail';
             }
@@ -2662,7 +2554,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}" -x 16 -s 16 -k 1M --header "Cookie: ${base.getCookie('__pus') || base.getCookie('__puus') || ''}"`);
         },
         convertLinkToBC(link, filename, ua) {
-            // ponytail: same as convertLinkToCurl — scope the cookie to what quark's CDN needs
+            // same as convertLinkToCurl — scope the cookie to what quark's CDN needs
             // instead of dumping the entire jar into a shareable link.
             const ck = base.getCookie('__pus') || base.getCookie('__puus') || '';
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&cookie=${encodeURIComponent(ck)}ZZ`;
@@ -2671,9 +2563,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
         convertLinkToCurl(link, filename, ua) {
             let terminal = base.getValue('setting_terminal_type');
             filename = base.fixFilename(filename);
-            // ponytail: this used to inline the whole document.cookie, dumping every session
-            // cookie for the domain into a copyable command. Scope it to the same cookie the
-            // aria2/RPC paths use.
+            // this used to inline the whole document.cookie, dumping every session
             const ck = base.getCookie('__pus') || base.getCookie('__puus') || '';
             const cookie = ck ? ` -b "${ck}"` : '';
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}"${cookie}`);
@@ -2697,7 +2587,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                                 Swal.close();
                                 message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                             } finally {
-                                // ponytail: covers every early-return path in getPCSLink, so a missed
                                 // Swal.close() there can no longer strand the spinner and lock the page.
                                 // No-op when the download dialog already replaced it.
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
@@ -2864,12 +2753,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
             try {
                 let res = await base.post(url, rpcData, {}, '');
                 if (res.result) return 'success';
-                // ponytail: aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
             } catch (e) {
-                // ponytail: a throw here is almost always "nothing is listening on that port".
                 message.error('无法连接 RPC（' + rpc.domain + ':' + rpc.port + '），请确认下载器已启动且 RPC 服务已开启');
                 return 'fail';
             }
@@ -2960,7 +2847,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // ponytail: covers every early-return path in getPCSLink, so a missed
                             // Swal.close() there can no longer strand the spinner and lock the page.
                             // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
@@ -3183,12 +3069,10 @@ base.iframeDownload(e.currentTarget.dataset.link);
             try {
                 let res = await base.post(url, rpcData, {}, '');
                 if (res.result) return 'success';
-                // ponytail: aria2 answered but refused — surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
             } catch (e) {
-                // ponytail: a throw here is almost always "nothing is listening on that port".
                 message.error('无法连接 RPC（' + rpc.domain + ':' + rpc.port + '），请确认下载器已启动且 RPC 服务已开启');
                 return 'fail';
             }

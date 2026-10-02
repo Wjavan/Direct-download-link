@@ -580,6 +580,13 @@
         },
         createTip() {
             $('body').append('<div class="pl-tooltip"></div>');
+            doc.on('click', '.listener-link-copy', async (e) => {
+                base.setClipboard(e.currentTarget.dataset.link);
+                const $btn = $(e.currentTarget);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制链接', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
+            });
             doc.on('mouseenter mouseleave', '.listener-tip', (e) => {
                 if (e.type === 'mouseenter') {
                     let filename = e.currentTarget.innerText;
@@ -1474,13 +1481,7 @@
                 $btn.html(orig.replace('复制文件名', '已复制'));
                 setTimeout(() => { $btn.html(orig); }, 1500);
             });
-            doc.on('click', '.listener-link-copy', async (e) => {
-                base.setClipboard(e.currentTarget.dataset.link);
-                const $btn = $(e.currentTarget);
-                const orig = $btn.html();
-                $btn.html(orig.replace('复制链接', '已复制'));
-                setTimeout(() => { $btn.html(orig); }, 1500);
-            });
+
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
                         Swal.showLoading();
@@ -2165,13 +2166,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 $btn.html(orig.replace('复制文件名', '已复制'));
                 setTimeout(() => { $btn.html(orig); }, 1500);
             });
-            doc.on('click', '.listener-link-copy', async (e) => {
-                base.setClipboard(e.currentTarget.dataset.link);
-                const $btn = $(e.currentTarget);
-                const orig = $btn.html();
-                $btn.html(orig.replace('复制链接', '已复制'));
-                setTimeout(() => { $btn.html(orig); }, 1500);
-            });
+
             doc.on('click', '.listener-link-bc-btn', async (e) => {
                 let mirror = base.getMirrorList(e.target.dataset.dlink, pan.mirror);
                 base.setClipboard(mirror);

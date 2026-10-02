@@ -1,0 +1,13 @@
+name: pushplus_notify
+version: "1.0"
+description: Auto push Hermes reply to WeChat via PushPlus
+config_schema:
+  enabled:
+    type: boolean
+    default: true
+    label: 启用推送
+  token:
+    type: string
+    default: ""
+    label: PushPlus Token
+    secret: true

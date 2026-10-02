@@ -1,0 +1,46 @@
+{
+  "富安达增强收益债券A": {
+    "type": "债券基金",
+    "code": "710301",
+    "cost": 1.4696,
+    "est_nav": 1.47,
+    "core_stocks": [],
+    "benchmark": "中债综合全价指数"
+  },
+  "安心量化精选沪深300指数增强A": {
+    "type": "指数增强",
+    "code": "003957",
+    "cost": 2.1028,
+    "est_nav": 2.096,
+    "core_stocks": [
+      "600519.SH",
+      "300750.SZ",
+      "000858.SZ",
+      "601318.SH",
+      "000333.SZ"
+    ],
+    "benchmark": "沪深300指数 (000300.SH)"
+  },
+  "易方达全球成长精选混合（QDII)A": {
+    "type": "QDII-全球成长",
+    "code": "012920",
+    "cost": 2.8852,
+    "est_nav": 2.868,
+    "core_stocks": [
+      "NVDA",
+      "MSFT",
+      "AAPL",
+      "GOOGL",
+      "TSLA"
+    ],
+    "benchmark": "纳斯达克100 (NDX)"
+  },
+  "国泰黄金ETF联接A": {
+    "type": "黄金ETF联接",
+    "code": "004253",
+    "cost": 4.0195,
+    "est_nav": 4.035,
+    "core_stocks": [],
+    "benchmark": "黄金现货 (XAU/USD)"
+  }
+}

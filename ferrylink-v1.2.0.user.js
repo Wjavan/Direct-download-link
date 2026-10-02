@@ -594,13 +594,6 @@
                 $btn.html(orig.replace('复制文件名', '已复制'));
                 setTimeout(() => { $btn.html(orig); }, 1500);
             });
-            doc.on('click', '.listener-link-api-btn', async (e) => {
-                base.setClipboard(e.currentTarget.dataset.filename);
-                const $btn = $(e.currentTarget);
-                const orig = $btn.html();
-                $btn.html(orig.replace('复制文件名', '已复制'));
-                setTimeout(() => { $btn.html(orig); }, 1500);
-            });
             doc.on('mouseenter mouseleave', '.listener-tip', (e) => {
                 if (e.type === 'mouseenter') {
                     let filename = e.currentTarget.innerText;

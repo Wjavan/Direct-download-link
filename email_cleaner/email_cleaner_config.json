@@ -1,0 +1,31 @@
+{
+  "accounts": [
+    {
+      "name": "126邮箱",
+      "enabled": true,
+      "email": "wangyuhan051216@126.com",
+      "password": "LFpTvY8CNqEsRxzZ",
+      "imap_host": "imap.126.com",
+      "imap_port": 993,
+      "whitelist_domains": []
+    },
+    {
+      "name": "QQ邮箱",
+      "enabled": true,
+      "email": "1930771063@qq.com",
+      "password": "kvopskwbotjehdii",
+      "imap_host": "imap.qq.com",
+      "imap_port": 993,
+      "whitelist_domains": ["github.com", "greasyfork.org", "proton.me", "noreply.fincept.in", "tokenrouter.io"]
+    },
+    {
+      "name": "Gmail",
+      "enabled": true,
+      "email": "wjavan680@gmail.com",
+      "password": "fkwt dqyr hxom wkxh",
+      "imap_host": "imap.gmail.com",
+      "imap_port": 993,
+      "whitelist_domains": ["google.com"]
+    }
+  ]
+}

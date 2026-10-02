@@ -118,9 +118,9 @@
 | 链接 | 地址 |
 |------|------|
 | 📦 GreasyFork 安装页 | https://greasyfork.org/zh-CN/scripts/595544 |
-| 🌐 项目主页 | https://github.com/Wjavan/Direct-download-link |
-| 🐛 提交 Issue | https://github.com/Wjavan/Direct-download-link/issues |
-| 🍴 查看 Forks | https://github.com/Wjavan/Direct-download-link/forks |
+| 🌐 项目主页 | https://github.com/Wjavan/FerryLink |
+| 🐛 提交 Issue | https://github.com/Wjavan/FerryLink/issues |
+| 🍴 查看 Forks | https://github.com/Wjavan/FerryLink/forks |
 
 ---
 
@@ -138,7 +138,7 @@
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Wjavan/Direct-download-link&type=Date)](https://star-history.com/#Wjavan/Direct-download-link&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Wjavan/FerryLink&type=Date)](https://star-history.com/#Wjavan/FerryLink&Date)
 
 ---
 

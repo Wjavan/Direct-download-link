@@ -1280,6 +1280,8 @@
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+
+                                <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
                                 <div class="pl-item-tip" style="display: none"><span>若没有弹出IDM下载框，请在IDM <b>选项</b> -> <b>文件类型</b> -> <b>第一个框</b> 中添加后缀 <span class="pl-ext">${ext}</span> 即可</span> <span class="pl-back listener-back">返回</span></div></div>`;
                 }
                 if (mode === 'aria') {
@@ -1472,6 +1474,13 @@
                 $btn.html(orig.replace('复制文件名', '已复制'));
                 setTimeout(() => { $btn.html(orig); }, 1500);
             });
+            doc.on('click', '.listener-link-copy', async (e) => {
+                base.setClipboard(e.currentTarget.dataset.link);
+                const $btn = $(e.currentTarget);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制链接', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
+            });
                     doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
                         Swal.showLoading();
@@ -1642,6 +1651,8 @@
                                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+
+                                <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
                                                 <div class="pl-item-btn listener-link-api-btn" data-filename="${base.esc(filename)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制文件名</div>
                                                 </div>`;
                                 }
@@ -1980,6 +1991,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+
+                                <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -2150,6 +2163,13 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 const $btn = $(e.target);
                 const orig = $btn.html();
                 $btn.html(orig.replace('复制文件名', '已复制'));
+                setTimeout(() => { $btn.html(orig); }, 1500);
+            });
+            doc.on('click', '.listener-link-copy', async (e) => {
+                base.setClipboard(e.currentTarget.dataset.link);
+                const $btn = $(e.currentTarget);
+                const orig = $btn.html();
+                $btn.html(orig.replace('复制链接', '已复制'));
                 setTimeout(() => { $btn.html(orig); }, 1500);
             });
             doc.on('click', '.listener-link-bc-btn', async (e) => {
@@ -2374,6 +2394,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                     <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${+v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+
+                                <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
                                     ${v.mediaLink ? `<button class="pl-item-link listener-link-media pl-btn-primary" data-filename="${base.esc(filename)}" data-link="${base.esc(v.mediaLink)}" data-index="${i}">云播转码下载(更小更快)</button>` : ''}
                                     <div class="pl-item-btn listener-link-api-btn" data-filename="${base.esc(filename)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制文件名</div>
                                     </div>`;
@@ -2686,6 +2708,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-fid="${fid}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+
+                                <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {
@@ -3002,6 +3026,8 @@ base.iframeDownload(e.currentTarget.dataset.link);
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${(v.contentSize || v.coSize)}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
+
+                                <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
                                 </div>`;
                 }
                 if (mode === 'aria') {

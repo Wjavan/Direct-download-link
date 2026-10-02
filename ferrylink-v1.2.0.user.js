@@ -191,10 +191,6 @@
                 ['shareToken', 'share_token'].forEach((k) => {
                     try { GM_deleteValue(k); localStorage.removeItem(k); } catch (e) {}
                 });
-                // the 'C:' default only resolves on Windows; blank lets aria2 use its own dir
-                if (GM_getValue('setting_rpc_dir', '') === 'C:') {
-                    GM_setValue('setting_rpc_dir', '');
-                }
                 GM_setValue(MARK, VERSION);
             } catch (e) { /* never block startup */ }
         },
@@ -1485,10 +1481,7 @@
             return encodeURIComponent(`${terminal !== 'wp' ? 'curl' : 'curl.exe'} -L -C - "${link}" -o "${filename}" -e "https://www.aliyundrive.com/" -A "${ua || navigator.userAgent}"`);
         },
         addPageListener() {
-            // this was only registered in the xunlei adapter, so on the alipan page the
-
-
-                    doc.on('click', '.pl-button-mode', async (e) => {
+            doc.on('click', '.pl-button-mode', async (e) => {
                         mode = e.target.dataset.mode;
                         Swal.showLoading();
                         try {

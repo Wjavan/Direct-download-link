@@ -173,12 +173,17 @@
             }
         },
         setStorage(key, value) {
-            // alipan reads its own token straight out of localStorage, so a refreshed
+            // alipan's own page scripts read the ali token straight out of localStorage,
+            // so only that key is mirrored there. Every other credential (access tokens,
+            // BDUSS, captcha, device id, etc.) is kept solely in the sandboxed GM storage,
+            // which page-level XSS cannot read, instead of being exposed via localStorage.
             let payload = value;
             if (this.isType(value) === 'object' || this.isType(value) === 'array') {
                 payload = JSON.stringify(value);
             }
-            try { localStorage.setItem(key, payload); } catch (e) { /* storage unavailable */ }
+            if (key === 'token') {
+                try { localStorage.setItem(key, payload); } catch (e) { /* storage unavailable */ }
+            }
             return GM_setValue(key, payload);
         },
         // throws (wrapped), and a failure just means we retry next load rather than blocking

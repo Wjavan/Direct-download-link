@@ -1,0 +1,2 @@
+# git worktree checkouts — real worktrees must not be tracked
+.worktrees/

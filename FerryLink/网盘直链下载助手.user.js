@@ -44,7 +44,6 @@
 // @grant             GM_cookie
 // @grant             GM_openInTab
 // @grant             window.close
-// @grant             GM_download
 // @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgcng9IjIyIiBmaWxsPSIjMmI3ZmZmIi8+PHBhdGggZD0iTTY0IDMwdjQ2IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMTIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik00NCA1OGwyMCAyMCAyMC0yMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz48cmVjdCB4PSIzNCIgeT0iOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiNmZmYiLz48L3N2Zz4=
 // @license           GPL-3.0
 // @downloadURL https://update.greasyfork.org/scripts/595544/%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B.user.js
@@ -648,40 +647,14 @@
             $div.append($iframe);
             $('body').append($div);
         },
-        // all six adapters download an api link the same way — hand the URL away and let
-        // something fetch it. GM_download first: the userscript manager does the transfer
-        // itself, so no navigation is started for a download manager extension to pick up,
-        // and it can carry a UA, which an iframe navigation cannot. Falls back to the hidden
-        // iframe on managers without it. headers is optional and only baidu needs it (its PCS
-        // wants the pan.baidu.com UA).
-        // Whether a download manager extension still intercepts GM_download depends on that
-        // extension, not on this script; there is no way to tell it to stay out.
-        iframeDownload(link, filename = '', headers = null) {
+        // all six adapters download an api link the same way — hand the URL to the browser
+        // via a hidden iframe. whether a download manager extension intercepts the
+        // resulting navigation is that extension's call; there is no script-side way to
+        // prevent it. the IDM button exists for users who want that route.
+        iframeDownload(link) {
             if (!/^https?:\/\//i.test(link)) {
                 message.error('提示：下载链接无效！');
                 return false;
-            }
-            if (typeof GM_download === 'function') {
-                try {
-                    GM_download({
-                        url: link,
-                        name: filename || undefined,
-                        headers: headers || undefined,
-                        onerror: (err) => {
-                            console.warn('[FerryLink] GM_download 失败，改用浏览器下载：', err);
-                            // GM_download fails for many reasons (the manager does not support
-                            // headers, the domain is not in @connect, a download manager extension
-                            // interfered). the iframe is strictly more compatible, so try it
-                            // before giving up. baidu's UA gate only bites past ~50MB, and the
-                            // file the user just clicked is probably under that.
-                            this.createDownloadIframe();
-                            $('#downloadIframe').attr('src', link);
-                        },
-                    });
-                    return true;
-                } catch (e) {
-                    console.warn('[FerryLink] GM_download 不可用，改用浏览器下载：', e);
-                }
             }
             this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
@@ -1094,13 +1067,7 @@
                         });
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                const link = e.currentTarget.dataset.link;
-                // baidu's PCS only serves big files to the pan.baidu.com UA. GM_download can
-                // set it, so size no longer decides anything here; the IDM button stays for
-                // anyone who wants a segmented download instead.
-                const isBaidu = /d\.pcs\.baidu\.com/.test(link);
-                base.iframeDownload(link, e.currentTarget.dataset.filename || '',
-                    isBaidu ? { 'User-Agent': 'pan.baidu.com' } : null);
+                base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);

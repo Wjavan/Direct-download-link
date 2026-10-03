@@ -795,13 +795,14 @@
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-            /* Api rows only. The name is capped at 118px, a quarter of the 470px the pair gets
-               in the 800px popup, so the name and link split roughly 1:3. Short names stay
-               short rather than leaving a gap. A clipped name is still recoverable, since the
+            /* Api rows only. The name is pinned to 118px, a quarter of the 470px the pair gets
+               in the 800px popup, so name and link split about 1:3. flex-shrink must stay 0:
+               with shrink 1 the link, which grows, crushed the name to about 20px, and that
+               read as no change at all. A clipped name stays recoverable, since the
                .listener-tip tooltip on the same element shows it in full on hover. Not applied
                to aria/curl/bc, where the link holds the command itself. Keyed on .pl-row-api,
                which only api rows carry. */
-            .pl-row-api .pl-item-name { flex: 0 1 118px; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
+            .pl-row-api .pl-item-name { flex: 0 0 118px; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
             .pl-row-api .pl-item-link { flex: 1 1 auto; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-item-btn { flex: 0 0 auto; }
             .pl-a { color: ${color}; text-decoration: none; }

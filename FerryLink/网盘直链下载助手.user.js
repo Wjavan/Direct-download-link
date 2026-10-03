@@ -1027,11 +1027,6 @@
                     item, link, tip, target,
                 };
             }
-            function _reset(i) {
-                ins[i] && clearInterval(ins[i]);
-                request[i] && request[i].abort();
-                progress[i] = 0;
-            }
             doc.on('mouseenter mouseleave click', '.pl-button.g-dropdown-button', (e) => {
                 if (e.type === 'mouseleave') {
                     $(e.currentTarget).removeClass('button-open');
@@ -1059,10 +1054,7 @@
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
                 const link = e.currentTarget.dataset.link;
-                // baidu PCS only serves files up to ~50MB to a plain browser request; bigger
-                // files need the pan.baidu.com UA which a browser navigation cannot set, so
-                // the click would do nothing. check the size on the row and say so. only baidu
-                // has this gate; the other five pans are untouched.
+                // baidu only: over 50MB a browser request gets nothing, so check the size.
                 if (/d\.pcs\.baidu\.com/.test(link)) {
                     const size = +e.currentTarget.dataset.filesize || 0;
                     if (size > 50 * 1024 * 1024) {
@@ -1461,7 +1453,7 @@
                 }
                 if (/openapi.baidu.com\/oauth\/2.0\/login_success/.test(location.href)) {
                     if (location.href.includes('access_token')) {
-                        let token = location.href.match(/access_token=([^&#]+)/)[1];
+                        let token = location.href.match(/access_token=([^&#]+)/)?.[1];
                         base.setValue('baidu_access_token', token);
                         this.getCurrentUK().then((uk) => {
                             if (uk) base.setValue('baidu_access_token_uk', uk);

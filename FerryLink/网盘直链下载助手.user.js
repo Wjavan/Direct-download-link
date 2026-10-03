@@ -828,14 +828,15 @@
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-            /* In api rows the filename is what the user reads; it sat at a fixed 150px while
-               the link absorbed the rest, truncating the name on long files. Only api rows
-               get that split — aria/curl/bc rows show the command itself in the link, so
-               capping it there would hide the thing the user needs to copy. Keyed on the IDM
+            /* Api rows only: the name keeps its own text width (flex-grow 0) and the link
+               takes the slack, so the link sits right after the filename instead of after
+               a gap. The name may still shrink, so long names ellipsise rather than push
+               the buttons out. Not applied to aria/curl/bc — those put the command itself
+               in the link, and a short command would leave the same gap. Keyed on the IDM
                button, which only api rows carry; on a browser without :has() (pre-105
-               Chrome) the whole override is dropped and the rows above still apply. */
-            .pl-item:has(.listener-idm) .pl-item-name { flex: 1 1 auto; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
-            .pl-item:has(.listener-idm) .pl-item-link { flex: 0 1 180px; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+               Chrome) the override is dropped and the rows above still apply. */
+            .pl-item:has(.listener-idm) .pl-item-name { flex: 0 1 auto; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
+            .pl-item:has(.listener-idm) .pl-item-link { flex: 1 1 180px; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-item-btn { flex: 0 0 auto; }
             /* the stream downloader rewrites the link text to「下载中 X%」. colour it as a
                live state instead of leaving it looking like an ordinary link. */

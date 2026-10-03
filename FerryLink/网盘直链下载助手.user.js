@@ -44,6 +44,7 @@
 // @grant             GM_cookie
 // @grant             GM_openInTab
 // @grant             window.close
+// @grant             GM_download
 // @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgcng9IjIyIiBmaWxsPSIjMmI3ZmZmIi8+PHBhdGggZD0iTTY0IDMwdjQ2IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMTIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik00NCA1OGwyMCAyMCAyMC0yMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz48cmVjdCB4PSIzNCIgeT0iOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiNmZmYiLz48L3N2Zz4=
 // @license           GPL-3.0
 // @downloadURL https://update.greasyfork.org/scripts/595544/%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B.user.js
@@ -64,11 +65,6 @@
         }));
         return;
     }
-    // biggest baidu file a browser navigation can pull unaided, in bytes. baidu never
-    // published the cut-off; 50MB is the maintainer's figure, matching a bypy issue that
-    // blames file size for the same error. a 32MB file was observed downloading. Files over
-    // this need the pan.baidu.com UA, which a browser navigation cannot set.
-    const DIRECT_MAX = 50 * 1024 * 1024;
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {};
 
@@ -652,11 +648,42 @@
             $div.append($iframe);
             $('body').append($div);
         },
-        // all six adapters download an api link the same way — hand the URL to the
-        iframeDownload(link) {
+        // all six adapters download an api link the same way — hand the URL away and let
+        // something fetch it. GM_download first: the userscript manager does the transfer
+        // itself, so no navigation is started for a download manager extension to pick up,
+        // and it can carry a UA, which an iframe navigation cannot. Falls back to the hidden
+        // iframe on managers without it. headers is optional and only baidu needs it (its PCS
+        // wants the pan.baidu.com UA).
+        // Whether a download manager extension still intercepts GM_download depends on that
+        // extension, not on this script; there is no way to tell it to stay out.
+        iframeDownload(link, filename = '', headers = null) {
             if (!/^https?:\/\//i.test(link)) {
                 message.error('提示：下载链接无效！');
                 return false;
+            }
+            if (typeof GM_download === 'function') {
+                try {
+                    GM_download({
+                        url: link,
+                        name: filename || undefined,
+                        headers: headers || undefined,
+                        onerror: (err) => {
+                            console.warn('[FerryLink] GM_download 失败：', err);
+                            // the iframe fallback sends the browser's own UA, which baidu's PCS
+                            // rejects past ~50MB. point at a route that can carry one instead of
+                            // dropping a link that silently does nothing.
+                            if (headers) {
+                                message.warning('浏览器下载失败。请用 IDM / Aria2 / cURL 下载。');
+                                return;
+                            }
+                            this.createDownloadIframe();
+                            $('#downloadIframe').attr('src', link);
+                        },
+                    });
+                    return true;
+                } catch (e) {
+                    console.warn('[FerryLink] GM_download 不可用，改用浏览器下载：', e);
+                }
             }
             this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
@@ -1070,15 +1097,12 @@
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
                 const link = e.currentTarget.dataset.link;
-                // Baidu PCS stops serving big files to a plain browser request, so the click
-                // would do nothing at all. The size is already on the row, so check it here
-                // rather than spending a request to find out.
-                const size = +e.currentTarget.dataset.filesize || 0;
-                if (/d\.pcs\.baidu\.com/.test(link) && size > DIRECT_MAX) {
-                    message.warning(`该文件超过 ${Math.round(DIRECT_MAX / 1024 / 1024)}MB，浏览器无法直接下载。\n请用 IDM / Aria2 / cURL 下载。`);
-                    return;
-                }
-                base.iframeDownload(link);
+                // baidu's PCS only serves big files to the pan.baidu.com UA. GM_download can
+                // set it, so size no longer decides anything here; the IDM button stays for
+                // anyone who wants a segmented download instead.
+                const isBaidu = /d\.pcs\.baidu\.com/.test(link);
+                base.iframeDownload(link, e.currentTarget.dataset.filename || '',
+                    isBaidu ? { 'User-Agent': 'pan.baidu.com' } : null);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);

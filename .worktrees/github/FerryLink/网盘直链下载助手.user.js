@@ -621,7 +621,7 @@
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
                 // from the current page), and those were fine for the other five pans. But
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize') || 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -756,7 +756,7 @@
                     format(122, 4)
                 ];
                 // quirk 3: the envelope is undocumented. Read left to right:
-                const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:0:0,${fields.join(',')};`;
+                const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:${filesize || 0}:0,${fields.join(',')};`;
                 // bypass base.post — it rejects on res.status >= 400 and parses as
                 const raw = await new Promise((resolve) => {
                     GM_xmlhttpRequest({

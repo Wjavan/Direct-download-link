@@ -819,18 +819,45 @@
             .swal2-popup { font-size: 16px !important; }
             .pl-popup { font-size: 12px !important; border-radius: 6px !important; box-shadow: 0 1px 2px rgb(28 28 32 / 4%), 0 6px 16px rgb(28 28 32 / 8%) !important; }
             .pl-popup a { color: ${color} !important; }
-            .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid #e6e8eb !important; margin: 0 0 10px !important; padding: 0 0 5px !important; }
-            .pl-title { font-size: 16px !important; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
+            .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid #e6e8eb !important; margin: 0 0 4px !important; padding: 0 0 8px !important; }
+            .pl-title { font-size: 15px !important; font-weight: 600; letter-spacing: -.01em; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
             .pl-content { padding: 0 !important; font-size: 12px !important; }
-            .pl-main { max-height: 400px; overflow-y: scroll; }
+            .pl-main { max-height: 400px; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
             .pl-footer { font-size: 12px !important; justify-content: flex-start !important; margin: 10px 0 0 !important; padding: 5px 0 0 !important; color: #cc3235 !important; }
-            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; gap: 6px; }
+            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; gap: 6px; padding: 6px 8px; }
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+            /* In api rows the filename is what the user reads; it sat at a fixed 150px while
+               the link absorbed the rest, truncating the name on long files. Only api rows
+               get that split — aria/curl/bc rows show the command itself in the link, so
+               capping it there would hide the thing the user needs to copy. Keyed on the IDM
+               button, which only api rows carry; on a browser without :has() (pre-105
+               Chrome) the whole override is dropped and the rows above still apply. */
+            .pl-item:has(.listener-idm) .pl-item-name { flex: 1 1 auto; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
+            .pl-item:has(.listener-idm) .pl-item-link { flex: 0 1 180px; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+            .pl-item-btn { flex: 0 0 auto; }
+            /* the stream downloader rewrites the link text to「下载中 X%」. colour it as a
+               live state instead of leaving it looking like an ordinary link. */
+            .pl-item-link.pl-dl-live { color: #909399; font-variant-numeric: tabular-nums; cursor: default; }
+            .pl-item-link.pl-dl-live:hover { text-decoration: none; }
+            .pl-item-link.pl-dl-done { color: #55af28; cursor: default; }
+            .pl-item-link.pl-dl-done:hover { text-decoration: none; }
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
-            button.pl-item-btn { background: ${color} !important; padding: 4px 5px !important; border-radius: 4px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
+            /* one filled action, two outlined. three identical solid buttons gave the user no
+               way to tell which was the real one. every api button carries .pl-btn-primary, so
+               the split is by handler: listener-idm is the action, the two copy buttons are
+               secondary. */
+            button.pl-item-btn { background: ${color} !important; padding: 4px 8px !important; border-radius: 6px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn { background: #fff !important; color: #111 !important; border: 1px solid #e6e8eb !important; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy:hover,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn:hover { background: #f5f6f7 !important; opacity: 1 !important; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy .pl-ico,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn .pl-ico { stroke: #787774; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy:hover .pl-ico,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn:hover .pl-ico { stroke: #111; }
             button.pl-item-btn:hover { opacity: 0.9; }
             button.pl-item-btn:active { filter: brightness(.9); }
             button.pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
@@ -1088,19 +1115,18 @@
                     : {};
                 const $link = $(e.currentTarget);
                 const orig = $link.html();
-                $link.css({ 'pointer-events': 'none', 'opacity': '0.7' })
-                     .html(`<span style="color:#909399">下载中 0%</span>`);
+                $link.addClass('pl-dl-live').html('下载中 0%');
                 try {
                     await base.streamDownload(link, headers, {
                         filename,
                         onProgress: (pct) => {
-                            $link.html(`<span style="color:#909399">下载中 ${pct}%</span>`);
+                            $link.html(`下载中 ${pct}%`);
                         }
                     });
-                    $link.html(`<span style="color:#55af28">下载完成</span>`);
+                    $link.removeClass('pl-dl-live').addClass('pl-dl-done').html('下载完成');
                     message.success('下载完成');
                 } catch (err) {
-                    $link.html(orig).css({ 'pointer-events': '', 'opacity': '' });
+                    $link.removeClass('pl-dl-live').html(orig);
                     message.error('下载失败：' + (err.message || '未知错误') + '。大文件请用 IDM/Aria2/cURL。');
                 }
             });

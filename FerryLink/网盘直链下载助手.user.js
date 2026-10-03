@@ -621,7 +621,10 @@
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
                 // from the current page), and those were fine for the other five pans. But
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize') || 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
+                let idmHeaders = {};
+                if (/d\.pcs\.baidu\.com/.test(href)) idmHeaders['User-Agent'] = 'pan.baidu.com';
+                if (/xunlei\.com/.test(href)) idmHeaders['Cookie'] = base.getCookie('__pus') || base.getCookie('__puus') || '';
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize') || 0, idmHeaders);
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {

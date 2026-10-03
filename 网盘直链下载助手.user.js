@@ -621,7 +621,7 @@
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
                 // from the current page), and those were fine for the other five pans. But
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize') || 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -647,54 +647,18 @@
             $div.append($iframe);
             $('body').append($div);
         },
-        // all five adapters download an api link the same way — hand the URL to the
+        // all six adapters download an api link the same way — hand the URL to the browser
+        // via a hidden iframe. whether a download manager extension intercepts the
+        // resulting navigation is that extension's call; there is no script-side way to
+        // prevent it. the IDM button exists for users who want that route.
         iframeDownload(link) {
             if (!/^https?:\/\//i.test(link)) {
                 message.error('提示：下载链接无效！');
                 return false;
             }
-            // create it here, not at each adapter's addButton — a missing iframe makes
             this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
             return true;
-        },
-        blobDownload(blob, filename) {
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        },
-        streamDownload(url, headers, extra = {}) {
-            headers = this.standHeaders(headers);
-            return new Promise((resolve, reject) => {
-                const key = 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-                const clear = () => { delete request[key]; };
-                request[key] = GM_xmlhttpRequest({
-                    method: "GET", url, headers,
-                    responseType: "blob",
-                    timeout: 0,
-                    onprogress: (res) => {
-                        if (res.total > 0 && extra.onProgress) {
-                            extra.onProgress(Math.floor(res.loaded * 100 / res.total), res.loaded, res.total);
-                        }
-                    },
-                    onload: (res) => {
-                        clear();
-                        if (res.status >= 200 && res.status < 300) {
-                            this.blobDownload(res.response, extra.filename || 'download');
-                            resolve(true);
-                        } else {
-                            reject(new Error('HTTP ' + res.status));
-                        }
-                    },
-                    onerror: (e) => { clear(); reject(e); },
-                    ontimeout: () => { clear(); reject(new Error('下载超时')); },
-                });
-            });
         },
 
         // IDM's capture protocol, not an extension sniff. IDM listens on 127.0.0.1:1001
@@ -757,7 +721,7 @@
                     format(122, 4)
                 ];
                 // quirk 3: the envelope is undocumented. Read left to right:
-                const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:0:0,${fields.join(',')};`;
+                const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:${filesize || 0}:0,${fields.join(',')};`;
                 // bypass base.post — it rejects on res.status >= 400 and parses as
                 const raw = await new Promise((resolve) => {
                     GM_xmlhttpRequest({
@@ -818,44 +782,51 @@
             ::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb:hover { border-radius: 5px; -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.2) }
             ::-webkit-scrollbar-thumb:hover { background-color: rgba(85,85,85,.3) }
             .swal2-popup { font-size: 16px !important; }
-            .pl-popup { font-size: 12px !important; border-radius: 6px !important; box-shadow: 0 0 1px 1px rgb(28 28 32 / 5%), 0 8px 24px rgb(28 28 32 / 12%) !important; }
+            .pl-popup { font-size: 12px !important; border-radius: 6px !important; box-shadow: 0 1px 2px rgb(28 28 32 / 4%), 0 6px 16px rgb(28 28 32 / 8%) !important; }
             .pl-popup a { color: ${color} !important; }
-            .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid #e6e8eb !important; margin: 0 0 10px !important; padding: 0 0 5px !important; }
-            .pl-title { font-size: 16px !important; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
+            .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid #e6e8eb !important; margin: 0 0 4px !important; padding: 0 0 8px !important; }
+            .pl-title { font-size: 15px !important; font-weight: 600; letter-spacing: -.01em; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
             .pl-content { padding: 0 !important; font-size: 12px !important; }
-            .pl-main { max-height: 400px; overflow-y: scroll; }
+            .pl-main { max-height: 400px; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
             .pl-footer { font-size: 12px !important; justify-content: flex-start !important; margin: 10px 0 0 !important; padding: 5px 0 0 !important; color: #cc3235 !important; }
-            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; gap: 6px; }
+            .pl-item { display: flex; align-items: center; line-height: 22px; border-radius: 4px; transition: background 180ms ease; gap: 6px; padding: 6px 8px; }
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+            /* Api rows only. The name is pinned to 118px, a quarter of the 470px the pair gets
+               in the 800px popup, so name and link split about 1:3. flex-shrink must stay 0:
+               with shrink 1 the link, which grows, crushed the name to about 20px, and that
+               read as no change at all. A clipped name stays recoverable, since the
+               .listener-tip tooltip on the same element shows it in full on hover. Not applied
+               to aria/curl/bc, where the link holds the command itself. Keyed on .pl-row-api,
+               which only api rows carry. */
+            .pl-row-api .pl-item-name { flex: 0 0 118px; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
+            .pl-row-api .pl-item-link { flex: 1 1 auto; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+            .pl-item-btn { flex: 0 0 auto; }
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
-            button.pl-item-btn { background: ${color} !important; padding: 4px 5px !important; border-radius: 4px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
-            .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
+            /* one filled action, two outlined. three identical solid buttons gave the user no
+               way to tell which was the real one. every api button carries .pl-btn-primary, so
+               the split is by handler: listener-idm is the action, the two copy buttons are
+               secondary. */
+            button.pl-item-btn { background: ${color} !important; padding: 4px 8px !important; border-radius: 6px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn { background: #fff !important; color: #111 !important; border: 1px solid #e6e8eb !important; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy:hover,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn:hover { background: #f5f6f7 !important; opacity: 1 !important; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy .pl-ico,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn .pl-ico { stroke: #787774; }
+            button.pl-item-btn.pl-btn-primary.listener-link-copy:hover .pl-ico,
+            button.pl-item-btn.pl-btn-primary.listener-link-api-btn:hover .pl-ico { stroke: #111; }
             button.pl-item-btn:hover { opacity: 0.9; }
             button.pl-item-btn:active { filter: brightness(.9); }
             button.pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
             button.pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
-            .pl-item-btn:hover { opacity: 0.9; }
-            .pl-item-btn:active { filter: brightness(.9); }
-            .pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
-            .pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
             .pl-item-tip { display: flex; justify-content: space-between; flex: 1; }
             .pl-back { width: 70px; background: #f5f6f7; border-radius: 4px; cursor: pointer; margin: 1px 0; transition: background 180ms ease; }
             .pl-back:hover { background: #e6e8eb; }
             .pl-back:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
             .pl-ext { display: inline-block; width: 44px; background: #909399; color: #fff; height: 16px; line-height: 16px; font-size: 12px; border-radius: 4px; }
-            .pl-browserdownload { padding: 3px 10px; background: ${color}; color: #fff; border-radius: 4px; cursor: pointer; border: 0; }
-            .pl-item-progress { display:flex;flex: 1;align-items:center}
-            .pl-progress { display: inline-block;vertical-align: middle;width: 100%; box-sizing: border-box;line-height: 1;position: relative;height:15px; flex: 1}
-            .pl-progress-outer { height: 15px; border-radius: 100px; background-color: #f5f6f7; overflow: hidden; position: relative; vertical-align: middle; }
-            .pl-progress-inner { position: absolute; left: 0; top: 0; background-color: ${color}; text-align: right; border-radius: 100px; line-height: 1; white-space: nowrap; transition: width .6s ease; }
-            .pl-progress-inner-text { display: inline-block; vertical-align: middle; color: #909399; font-size: 12px; margin: 0 5px; height: 15px; }
-            .pl-progress-tip{ flex:1;text-align:right}
-            .pl-progress-how{ flex: 0 0 90px; background: #f5f6f7; border-radius: 4px; margin-left: 10px; cursor: pointer; text-align: center;}
-            .pl-progress-stop{ flex: 0 0 50px; padding: 0 10px; background: #cc3235; color: #fff; border-radius: 4px; cursor: pointer;margin-left:10px;height:20px}
-            .pl-progress-inner-text:after { display: inline-block;content: "";height: 100%;vertical-align: middle;}
             .pl-btn-primary { background: ${color}; border: 0; border-radius: 6px; color: #fff; cursor: pointer; font-size: 12px; outline: none; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 6px 0; min-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 180ms ease; }
             .pl-btn-primary:hover { opacity: 0.9; }
             .pl-btn-primary:active { filter: brightness(.9); }
@@ -883,7 +854,7 @@
             .quark-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 8px; white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; color: #333; background: #fff; margin-right: 10px; padding: 0 14px; position: relative; cursor: pointer; height: 36px; min-height: 32px; transition: background .3s ease; }
             .quark-button:hover { background: #f6f6f6; }
             .quark-button:focus-visible { outline: 2px solid #3f85ff; outline-offset: 2px; }
-            .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: #303133; background: #fff; z-index: 999; width: 102px; border: 1px solid #e6e8eb; border-radius: 10px; box-shadow: 0 0 1px 1px rgb(28 28 32 / 5%), 0 8px 24px rgb(28 28 32 / 12%); }
+            .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: #303133; background: #fff; z-index: 999; width: 102px; border: 1px solid #e6e8eb; border-radius: 6px; box-shadow: 0 1px 2px rgb(28 28 32 / 4%), 0 6px 16px rgb(28 28 32 / 8%); }
             .pl-dropdown-menu-item { min-height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 180ms ease; }
             .pl-dropdown-menu-item:hover { background-color: rgba(132,133,141,0.08); }
             .pl-button .pl-dropdown-menu { display: none; }
@@ -1060,10 +1031,9 @@
                 let target = $(e.target);
                 let item = target.parents('.pl-item');
                 let link = item.find('.pl-item-link');
-                let progress = item.find('.pl-item-progress');
                 let tip = item.find('.pl-item-tip');
                 return {
-                    item, link, progress, tip, target,
+                    item, link, tip, target,
                 };
             }
             function _reset(i) {
@@ -1095,33 +1065,9 @@
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                e.stopImmediatePropagation();
-                const link = e.currentTarget.dataset.link;
-                const filename = e.currentTarget.dataset.filename || 'download';
-                // Baidu PCS rejects browser-UA requests for large files (error 31326);
-                // GM_xmlhttpRequest carries User-Agent: pan.baidu.com, iframe can't.
-                const headers = /d\.pcs\.baidu\.com/.test(link)
-                    ? { 'User-Agent': 'pan.baidu.com' }
-                    : {};
-                const $link = $(e.currentTarget);
-                const orig = $link.html();
-                $link.css({ 'pointer-events': 'none', 'opacity': '0.7' })
-                     .html(`<span style="color:#909399">下载中 0%</span>`);
-                try {
-                    await base.streamDownload(link, headers, {
-                        filename,
-                        onProgress: (pct) => {
-                            $link.html(`<span style="color:#909399">下载中 ${pct}%</span>`);
-                        }
-                    });
-                    $link.html(`<span style="color:#55af28">下载完成</span>`);
-                    message.success('下载完成');
-                } catch (err) {
-                    $link.html(orig).css({ 'pointer-events': '', 'opacity': '' });
-                    message.error('下载失败：' + (err.message || '未知错误') + '。大文件请用 IDM/Aria2/cURL。');
-                }
+                base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);
@@ -1350,9 +1296,9 @@
                 }
                 let dlink = v.dlink + '&access_token=' + base.getValue('baidu_access_token');
                 if (mode === 'api') {
-                    content += `<div class="pl-item">
+                    content += `<div class="pl-item pl-row-api">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
 
                                 <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>
@@ -1708,7 +1654,7 @@
                 let size = base.sizeFormat(v.size);
                 let dlink = v.downloadUrl;
                                 if (mode === 'api') {
-                                    content += `<div class="pl-item">
+                                    content += `<div class="pl-item pl-row-api">
                                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-did="${did}" data-fid="${fid}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
@@ -1998,7 +1944,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     };
                     return {
                         index,
-                        downloadUrl: '提示：请先[转存]文件，👉前往[我的网盘]中下载！'
+                        downloadUrl: '提示：请先[转存]文件，前往[我的网盘]中下载！'
                     };
                 } else {
                     return {
@@ -2049,7 +1995,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     return;
                 }
                 if (mode === 'api') {
-                    content += `<div class="pl-item">
+                    content += `<div class="pl-item pl-row-api">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
@@ -2415,7 +2361,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 let dialog = await Swal.fire({
                     toast: true,
                     icon: 'info',
-                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>👉前往<span class="tag-danger">[我的网盘]</span>中下载！`,
+                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>后前往<span class="tag-danger">[我的网盘]</span>中下载！`,
                     showConfirmButton: true,
                     confirmButtonText: '点击保存',
                     position: 'top',
@@ -2442,7 +2388,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     return;
                 }
                 if (mode === 'api') {
-                    content += `<div class="pl-item">
+                    content += `<div class="pl-item pl-row-api">
                                     <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                     <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                     <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${+v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
@@ -2735,7 +2681,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 let dialog = await Swal.fire({
                     toast: true,
                     icon: 'info',
-                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>👉前往<span class="tag-danger">[我的网盘]</span>中下载！`,
+                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>后前往<span class="tag-danger">[我的网盘]</span>中下载！`,
                     showConfirmButton: true,
                     confirmButtonText: '点击保存',
                     position: 'top',
@@ -2757,7 +2703,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 let size = base.sizeFormat(v.size);
                 let dlink = v.download_url;
                 if (mode === 'api') {
-                    content += `<div class="pl-item">
+                    content += `<div class="pl-item pl-row-api">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-fid="${fid}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
@@ -3077,7 +3023,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     return;
                 }
                 if (mode === 'api') {
-                    content += `<div class="pl-item">
+                    content += `<div class="pl-item pl-row-api">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
                                 <a class="pl-item-link listener-link-api" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${(v.contentSize || v.coSize)}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>

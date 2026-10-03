@@ -817,7 +817,7 @@
             ::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb:hover { border-radius: 5px; -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.2) }
             ::-webkit-scrollbar-thumb:hover { background-color: rgba(85,85,85,.3) }
             .swal2-popup { font-size: 16px !important; }
-            .pl-popup { font-size: 12px !important; border-radius: 6px !important; box-shadow: 0 0 1px 1px rgb(28 28 32 / 5%), 0 8px 24px rgb(28 28 32 / 12%) !important; }
+            .pl-popup { font-size: 12px !important; border-radius: 6px !important; box-shadow: 0 1px 2px rgb(28 28 32 / 4%), 0 6px 16px rgb(28 28 32 / 8%) !important; }
             .pl-popup a { color: ${color} !important; }
             .pl-header { padding: 0 !important; align-items: flex-start !important; border-bottom: 1px solid #e6e8eb !important; margin: 0 0 10px !important; padding: 0 0 5px !important; }
             .pl-title { font-size: 16px !important; line-height: 1 !important; white-space: nowrap !important; text-overflow: ellipsis !important; }
@@ -831,30 +831,15 @@
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
             button.pl-item-btn { background: ${color} !important; padding: 4px 5px !important; border-radius: 4px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
-            .pl-item-btn { background: ${color}; padding: 4px 5px; border-radius: 4px; line-height: 1; cursor: pointer; color: #fff; border: 0; height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: opacity 180ms ease; }
             button.pl-item-btn:hover { opacity: 0.9; }
             button.pl-item-btn:active { filter: brightness(.9); }
             button.pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
             button.pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
-            .pl-item-btn:hover { opacity: 0.9; }
-            .pl-item-btn:active { filter: brightness(.9); }
-            .pl-item-btn:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
-            .pl-item-btn:disabled { background: #f5f6f7; color: #c0c4cc; cursor: not-allowed; filter: none; }
             .pl-item-tip { display: flex; justify-content: space-between; flex: 1; }
             .pl-back { width: 70px; background: #f5f6f7; border-radius: 4px; cursor: pointer; margin: 1px 0; transition: background 180ms ease; }
             .pl-back:hover { background: #e6e8eb; }
             .pl-back:focus-visible { outline: 2px solid ${color}; outline-offset: 2px; }
             .pl-ext { display: inline-block; width: 44px; background: #909399; color: #fff; height: 16px; line-height: 16px; font-size: 12px; border-radius: 4px; }
-            .pl-browserdownload { padding: 3px 10px; background: ${color}; color: #fff; border-radius: 4px; cursor: pointer; border: 0; }
-            .pl-item-progress { display:flex;flex: 1;align-items:center}
-            .pl-progress { display: inline-block;vertical-align: middle;width: 100%; box-sizing: border-box;line-height: 1;position: relative;height:15px; flex: 1}
-            .pl-progress-outer { height: 15px; border-radius: 100px; background-color: #f5f6f7; overflow: hidden; position: relative; vertical-align: middle; }
-            .pl-progress-inner { position: absolute; left: 0; top: 0; background-color: ${color}; text-align: right; border-radius: 100px; line-height: 1; white-space: nowrap; transition: width .6s ease; }
-            .pl-progress-inner-text { display: inline-block; vertical-align: middle; color: #909399; font-size: 12px; margin: 0 5px; height: 15px; }
-            .pl-progress-tip{ flex:1;text-align:right}
-            .pl-progress-how{ flex: 0 0 90px; background: #f5f6f7; border-radius: 4px; margin-left: 10px; cursor: pointer; text-align: center;}
-            .pl-progress-stop{ flex: 0 0 50px; padding: 0 10px; background: #cc3235; color: #fff; border-radius: 4px; cursor: pointer;margin-left:10px;height:20px}
-            .pl-progress-inner-text:after { display: inline-block;content: "";height: 100%;vertical-align: middle;}
             .pl-btn-primary { background: ${color}; border: 0; border-radius: 6px; color: #fff; cursor: pointer; font-size: 12px; outline: none; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 6px 0; min-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 180ms ease; }
             .pl-btn-primary:hover { opacity: 0.9; }
             .pl-btn-primary:active { filter: brightness(.9); }
@@ -882,7 +867,7 @@
             .quark-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 8px; white-space: nowrap; flex-shrink: 0; font-size: 14px; line-height: 1.5; outline: 0; color: #333; background: #fff; margin-right: 10px; padding: 0 14px; position: relative; cursor: pointer; height: 36px; min-height: 32px; transition: background .3s ease; }
             .quark-button:hover { background: #f6f6f6; }
             .quark-button:focus-visible { outline: 2px solid #3f85ff; outline-offset: 2px; }
-            .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: #303133; background: #fff; z-index: 999; width: 102px; border: 1px solid #e6e8eb; border-radius: 10px; box-shadow: 0 0 1px 1px rgb(28 28 32 / 5%), 0 8px 24px rgb(28 28 32 / 12%); }
+            .pl-dropdown-menu { position: absolute; right: 0; top: 30px; padding: 5px 0; color: #303133; background: #fff; z-index: 999; width: 102px; border: 1px solid #e6e8eb; border-radius: 6px; box-shadow: 0 1px 2px rgb(28 28 32 / 4%), 0 6px 16px rgb(28 28 32 / 8%); }
             .pl-dropdown-menu-item { min-height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 180ms ease; }
             .pl-dropdown-menu-item:hover { background-color: rgba(132,133,141,0.08); }
             .pl-button .pl-dropdown-menu { display: none; }
@@ -1059,10 +1044,9 @@
                 let target = $(e.target);
                 let item = target.parents('.pl-item');
                 let link = item.find('.pl-item-link');
-                let progress = item.find('.pl-item-progress');
                 let tip = item.find('.pl-item-tip');
                 return {
-                    item, link, progress, tip, target,
+                    item, link, tip, target,
                 };
             }
             function _reset(i) {
@@ -1995,7 +1979,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                     };
                     return {
                         index,
-                        downloadUrl: '提示：请先[转存]文件，👉前往[我的网盘]中下载！'
+                        downloadUrl: '提示：请先[转存]文件，前往[我的网盘]中下载！'
                     };
                 } else {
                     return {
@@ -2412,7 +2396,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 let dialog = await Swal.fire({
                     toast: true,
                     icon: 'info',
-                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>👉前往<span class="tag-danger">[我的网盘]</span>中下载！`,
+                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>后前往<span class="tag-danger">[我的网盘]</span>中下载！`,
                     showConfirmButton: true,
                     confirmButtonText: '点击保存',
                     position: 'top',
@@ -2732,7 +2716,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 let dialog = await Swal.fire({
                     toast: true,
                     icon: 'info',
-                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>👉前往<span class="tag-danger">[我的网盘]</span>中下载！`,
+                    title: `提示：请将文件<span class="tag-danger">[保存到网盘]</span>后前往<span class="tag-danger">[我的网盘]</span>中下载！`,
                     showConfirmButton: true,
                     confirmButtonText: '点击保存',
                     position: 'top',

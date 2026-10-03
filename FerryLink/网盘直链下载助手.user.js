@@ -1067,7 +1067,19 @@
                         });
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                base.iframeDownload(e.currentTarget.dataset.link);
+                const link = e.currentTarget.dataset.link;
+                // baidu PCS only serves files up to ~50MB to a plain browser request; bigger
+                // files need the pan.baidu.com UA which a browser navigation cannot set, so
+                // the click would do nothing. check the size on the row and say so. only baidu
+                // has this gate; the other five pans are untouched.
+                if (/d\.pcs\.baidu\.com/.test(link)) {
+                    const size = +e.currentTarget.dataset.filesize || 0;
+                    if (size > 50 * 1024 * 1024) {
+                        message.warning('该文件超过 50MB，浏览器无法直接下载。\n请用 IDM / Aria2 / cURL 下载。');
+                        return;
+                    }
+                }
+                base.iframeDownload(link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);

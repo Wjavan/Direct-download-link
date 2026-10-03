@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              FerryLink
 // @namespace         https://github.com/Wjavan/FerryLink
-// @version           1.2.0
+// @version           1.2.1
 // @author            Wjavan
 // @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持 HTTP/JSON-RPC/cURL，推送至 IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。
 // @description:en    Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.A fork of youxiaohou's Pan Download Helper.
@@ -621,7 +621,7 @@
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
                 // from the current page), and those were fine for the other five pans. But
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0);
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -657,6 +657,44 @@
             this.createDownloadIframe();
             $('#downloadIframe').attr('src', link);
             return true;
+        },
+        blobDownload(blob, filename) {
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        },
+        streamDownload(url, headers, extra = {}) {
+            headers = this.standHeaders(headers);
+            return new Promise((resolve, reject) => {
+                const key = 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+                const clear = () => { delete request[key]; };
+                request[key] = GM_xmlhttpRequest({
+                    method: "GET", url, headers,
+                    responseType: "blob",
+                    timeout: 0,
+                    onprogress: (res) => {
+                        if (res.total > 0 && extra.onProgress) {
+                            extra.onProgress(Math.floor(res.loaded * 100 / res.total), res.loaded, res.total);
+                        }
+                    },
+                    onload: (res) => {
+                        clear();
+                        if (res.status >= 200 && res.status < 300) {
+                            this.blobDownload(res.response, extra.filename || 'download');
+                            resolve(true);
+                        } else {
+                            reject(new Error('HTTP ' + res.status));
+                        }
+                    },
+                    onerror: (e) => { clear(); reject(e); },
+                    ontimeout: () => { clear(); reject(new Error('下载超时')); },
+                });
+            });
         },
 
         // IDM's capture protocol, not an extension sniff. IDM listens on 127.0.0.1:1001
@@ -1057,10 +1095,33 @@
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
-            doc.on('click', '.listener-link-api', (e) => {
+            doc.on('click', '.listener-link-api', async (e) => {
                 e.preventDefault();
-                // the hidden iframe makes the BROWSER request the dlink, which is the
-                base.iframeDownload(e.currentTarget.dataset.link);
+                e.stopImmediatePropagation();
+                const link = e.currentTarget.dataset.link;
+                const filename = e.currentTarget.dataset.filename || 'download';
+                // Baidu PCS rejects browser-UA requests for large files (error 31326);
+                // GM_xmlhttpRequest carries User-Agent: pan.baidu.com, iframe can't.
+                const headers = /d\.pcs\.baidu\.com/.test(link)
+                    ? { 'User-Agent': 'pan.baidu.com' }
+                    : {};
+                const $link = $(e.currentTarget);
+                const orig = $link.html();
+                $link.css({ 'pointer-events': 'none', 'opacity': '0.7' })
+                     .html(`<span style="color:#909399">下载中 0%</span>`);
+                try {
+                    await base.streamDownload(link, headers, {
+                        filename,
+                        onProgress: (pct) => {
+                            $link.html(`<span style="color:#909399">下载中 ${pct}%</span>`);
+                        }
+                    });
+                    $link.html(`<span style="color:#55af28">下载完成</span>`);
+                    message.success('下载完成');
+                } catch (err) {
+                    $link.html(orig).css({ 'pointer-events': '', 'opacity': '' });
+                    message.error('下载失败：' + (err.message || '未知错误') + '。大文件请用 IDM/Aria2/cURL。');
+                }
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);

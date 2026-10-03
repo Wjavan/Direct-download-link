@@ -657,44 +657,6 @@
             $('#downloadIframe').attr('src', link);
             return true;
         },
-        blobDownload(blob, filename) {
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        },
-        streamDownload(url, headers, extra = {}) {
-            headers = this.standHeaders(headers);
-            return new Promise((resolve, reject) => {
-                const key = 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-                const clear = () => { delete request[key]; };
-                request[key] = GM_xmlhttpRequest({
-                    method: "GET", url, headers,
-                    responseType: "blob",
-                    timeout: 0,
-                    onprogress: (res) => {
-                        if (res.total > 0 && extra.onProgress) {
-                            extra.onProgress(Math.floor(res.loaded * 100 / res.total), res.loaded, res.total);
-                        }
-                    },
-                    onload: (res) => {
-                        clear();
-                        if (res.status >= 200 && res.status < 300) {
-                            this.blobDownload(res.response, extra.filename || 'download');
-                            resolve(true);
-                        } else {
-                            reject(new Error('HTTP ' + res.status));
-                        }
-                    },
-                    onerror: (e) => { clear(); reject(e); },
-                    ontimeout: () => { clear(); reject(new Error('下载超时')); },
-                });
-            });
-        },
 
         // IDM's capture protocol, not an extension sniff. IDM listens on 127.0.0.1:1001
         standHeaders(headers = {}, addDefault = false) {
@@ -838,12 +800,6 @@
             .pl-item:has(.listener-idm) .pl-item-name { flex: 0 1 auto; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
             .pl-item:has(.listener-idm) .pl-item-link { flex: 1 1 180px; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-item-btn { flex: 0 0 auto; }
-            /* the stream downloader rewrites the link text to「下载中 X%」. colour it as a
-               live state instead of leaving it looking like an ordinary link. */
-            .pl-item-link.pl-dl-live { color: #909399; font-variant-numeric: tabular-nums; cursor: default; }
-            .pl-item-link.pl-dl-live:hover { text-decoration: none; }
-            .pl-item-link.pl-dl-done { color: #55af28; cursor: default; }
-            .pl-item-link.pl-dl-done:hover { text-decoration: none; }
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
             /* one filled action, two outlined. three identical solid buttons gave the user no
@@ -1106,30 +1062,9 @@
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                e.stopImmediatePropagation();
-                const link = e.currentTarget.dataset.link;
-                const filename = e.currentTarget.dataset.filename || 'download';
-                const headers = /d\.pcs\.baidu\.com/.test(link)
-                    ? { 'User-Agent': 'pan.baidu.com' }
-                    : {};
-                const $link = $(e.currentTarget);
-                const orig = $link.html();
-                $link.addClass('pl-dl-live').html('下载中 0%');
-                try {
-                    await base.streamDownload(link, headers, {
-                        filename,
-                        onProgress: (pct) => {
-                            $link.html(`下载中 ${pct}%`);
-                        }
-                    });
-                    $link.removeClass('pl-dl-live').addClass('pl-dl-done').html('下载完成');
-                    message.success('下载完成');
-                } catch (err) {
-                    $link.removeClass('pl-dl-live').html(orig);
-                    message.error('下载失败：' + (err.message || '未知错误') + '。大文件请用 IDM/Aria2/cURL。');
-                }
+                base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);

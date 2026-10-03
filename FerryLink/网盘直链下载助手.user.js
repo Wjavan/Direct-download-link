@@ -668,14 +668,12 @@
                         name: filename || undefined,
                         headers: headers || undefined,
                         onerror: (err) => {
-                            console.warn('[FerryLink] GM_download 失败：', err);
-                            // the iframe fallback sends the browser's own UA, which baidu's PCS
-                            // rejects past ~50MB. point at a route that can carry one instead of
-                            // dropping a link that silently does nothing.
-                            if (headers) {
-                                message.warning('浏览器下载失败。请用 IDM / Aria2 / cURL 下载。');
-                                return;
-                            }
+                            console.warn('[FerryLink] GM_download 失败，改用浏览器下载：', err);
+                            // GM_download fails for many reasons (the manager does not support
+                            // headers, the domain is not in @connect, a download manager extension
+                            // interfered). the iframe is strictly more compatible, so try it
+                            // before giving up. baidu's UA gate only bites past ~50MB, and the
+                            // file the user just clicked is probably under that.
                             this.createDownloadIframe();
                             $('#downloadIframe').attr('src', link);
                         },

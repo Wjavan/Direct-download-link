@@ -795,13 +795,14 @@
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-            /* Api rows only. The name grows to at most a quarter of the link's width, so the
-               link stays readable; short names stay short rather than leaving a gap. A clipped
-               name is still recoverable, since the .listener-tip tooltip on the same element shows
-               it in full on hover. Not applied to aria/curl/bc, where the link holds the
-               command itself. Keyed on the IDM button, which only api rows carry; on a browser
-               without :has() (pre-105 Chrome) the override is dropped and the rows above apply. */
-            .pl-item:has(.listener-idm) .pl-item-name { flex: 0 1 94px; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
+            /* Api rows only. The name is capped at 118px, a quarter of the 470px the pair gets
+               in the 800px popup, so the name and link split roughly 1:3. Short names stay
+               short rather than leaving a gap. A clipped name is still recoverable, since the
+               .listener-tip tooltip on the same element shows it in full on hover. Not applied
+               to aria/curl/bc, where the link holds the command itself. Keyed on the IDM button,
+               which only api rows carry; on a browser without :has() (pre-105 Chrome) the
+               override is dropped and the rows above apply. */
+            .pl-item:has(.listener-idm) .pl-item-name { flex: 0 1 118px; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
             .pl-item:has(.listener-idm) .pl-item-link { flex: 1 1 auto; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-item-btn { flex: 0 0 auto; }
             .pl-a { color: ${color}; text-decoration: none; }

@@ -184,7 +184,7 @@
         // throws (wrapped), and a failure just means we retry next load rather than blocking
         migrate() {
             const MARK = 'ferrylink_migrated_version';
-            const VERSION = '1.2.2';
+            const VERSION = '1.2.1';
             try {
                 if (GM_getValue(MARK, '') === VERSION) return;
                 // orphaned by removing share-page support

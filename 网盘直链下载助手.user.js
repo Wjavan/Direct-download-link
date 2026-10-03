@@ -621,7 +621,7 @@
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
                 // from the current page), and those were fine for the other five pans. But
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), 0);
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -1057,36 +1057,10 @@
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
-            doc.on('click', '.listener-link-api', async (e) => {
+            doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                e.stopImmediatePropagation();
-                const link = e.currentTarget.dataset.link;
-                // Baidu PCS rejects requests without User-Agent: pan.baidu.com for
-                // large files (error 31326). The iframe can't set custom UA, so
-                // pre-flight with a ranged GET to check.
-                if (/d\.pcs\.baidu\.com/.test(link)) {
-                    try {
-                        const check = await new Promise((resolve) => {
-                            GM_xmlhttpRequest({
-                                method: 'GET',
-                                url: link,
-                                headers: { 'Range': 'bytes=0-0' },
-                                timeout: 10000,
-                                onload: (r) => resolve(r),
-                                onerror: () => resolve(null),
-                                ontimeout: () => resolve(null),
-                            });
-                        });
-                        if (check) {
-                            const body = check.responseText || '';
-                            if (body.includes('31326') || body.includes('not authorized')) {
-                                message.warning('文件过大，百度要求特定 User-Agent，浏览器无法直接下载。请用 IDM/Aria2/cURL 下载。');
-                                return;
-                            }
-                        }
-                    } catch (e) {}
-                }
-                base.iframeDownload(link);
+                // the hidden iframe makes the BROWSER request the dlink, which is the
+                base.iframeDownload(e.currentTarget.dataset.link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);

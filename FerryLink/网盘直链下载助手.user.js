@@ -64,6 +64,12 @@
         }));
         return;
     }
+    // biggest baidu file a browser navigation can pull unaided, in bytes. baidu never
+    // published the cut-off and it drifts, so this is deliberately set at the top of the
+    // reported range: 32MB was observed downloading, a bypy report puts the wall at 50M,
+    // and the alist/opendoc docs only guess "about 20M". Erring high means a file that
+    // would have worked is not refused. Lower it if large files start failing silently.
+    const DIRECT_MAX = 50 * 1024 * 1024;
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {};
 
@@ -1065,13 +1071,12 @@
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
                 const link = e.currentTarget.dataset.link;
-                // Baidu PCS only serves files above ~20MB to a request carrying
-                // User-Agent: pan.baidu.com, and a browser navigation cannot set a UA, so a
-                // big file would otherwise fail silently on click. The size is already on
-                // the row, so check it here instead of spending a request to find out.
+                // Baidu PCS stops serving big files to a plain browser request, so the click
+                // would do nothing at all. The size is already on the row, so check it here
+                // rather than spending a request to find out.
                 const size = +e.currentTarget.dataset.filesize || 0;
-                if (/d\.pcs\.baidu\.com/.test(link) && size > 20 * 1024 * 1024) {
-                    message.warning('该文件超过 20MB，百度要求特定 User-Agent 才放行，浏览器无法携带。\n请用 IDM / Aria2 / cURL 下载。');
+                if (/d\.pcs\.baidu\.com/.test(link) && size > DIRECT_MAX) {
+                    message.warning(`该文件超过 ${Math.round(DIRECT_MAX / 1024 / 1024)}MB，浏览器无法直接下载。\n请用 IDM / Aria2 / cURL 下载。`);
                     return;
                 }
                 base.iframeDownload(link);

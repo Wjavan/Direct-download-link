@@ -184,7 +184,7 @@
         // throws (wrapped), and a failure just means we retry next load rather than blocking
         migrate() {
             const MARK = 'ferrylink_migrated_version';
-            const VERSION = '1.2.0';
+            const VERSION = '1.2.2';
             try {
                 if (GM_getValue(MARK, '') === VERSION) return;
                 // orphaned by removing share-page support
@@ -278,7 +278,7 @@
         },
         getSign(e, t, a, n) {
             // `i = ""` was an implicit global, which throws ReferenceError under the
-            // IIFE's 'use strict' — every yidong download died here. Declare it locally.
+            // IIFE's 'use strict' - every yidong download died here. Declare it locally.
             let i = "";
             if (t) {
                 let s = Object.assign({}, t);
@@ -344,7 +344,7 @@
         get(url, headers, type, extra) {
             headers = Object.assign({ 'Referer': location.origin }, headers);
             return new Promise((resolve, reject) => {
-                // track from the start, not in onloadstart — if the request
+                // track from the start, not in onloadstart - if the request
                 // errors before onloadstart fires, it's stuck and can't be aborted.
                 const key = 'get_' + (extra && extra.index != null ? extra.index : Date.now());
                 const clear = () => { delete request[key]; };
@@ -544,7 +544,7 @@
             doc.on('click', '.listener-color', async (e) => {
                 base.setValue('setting_theme_color', e.target.dataset.color);
                 message.success('设置成功！');
-                // No history.go(0) — theme change applies immediately via CSS update
+                // No history.go(0) - theme change applies immediately via CSS update
             });
             doc.on('input', '.listener-domain', async (e) => {
                 base.setValue('setting_rpc_domain', e.target.value);
@@ -606,7 +606,7 @@
                 }
             });
 
-            // one registration covers all six adapters — every api row renders this
+            // one registration covers all six adapters - every api row renders this
             doc.on('click', '.listener-idm', async (e) => {
                 e.preventDefault();
                 const btn = $(e.currentTarget);
@@ -615,13 +615,16 @@
                     message.error('提示：下载链接无效！');
                     return;
                 }
-                // guard against a second click while the first is still in flight —
+                // guard against a second click while the first is still in flight -
                 if (btn.attr('data-processing') === 'true') return;
                 btn.attr('data-processing', 'true');
                 const original = btn.html();
                 btn.addClass('is-loading').attr('title', '正在推送到 IDM…');
                 // from the current page), and those were fine for the other five pans. But
-                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize') || 0, /d\.pcs\.baidu\.com/.test(href) ? { 'User-Agent': 'pan.baidu.com' } : {});
+                let idmHeaders = {};
+                if (/d\.pcs\.baidu\.com/.test(href)) idmHeaders['User-Agent'] = 'pan.baidu.com';
+                if (/xunlei\.com/.test(href)) idmHeaders['Cookie'] = base.getCookie('__pus') || base.getCookie('__puus') || '';
+                const res = await base.sendLinkToIDM(href, btn.data('filename'), btn.data('filesize') || 0, idmHeaders);
                 btn.attr('data-processing', 'false');
                 btn.removeClass('is-loading');
                 if (res === 'success') {
@@ -647,7 +650,7 @@
             $div.append($iframe);
             $('body').append($div);
         },
-        // all six adapters download an api link the same way — hand the URL to the browser
+        // all six adapters download an api link the same way - hand the URL to the browser
         // via a hidden iframe. whether a download manager extension intercepts the
         // resulting navigation is that extension's call; there is no script-side way to
         // prevent it. the IDM button exists for users who want that route.
@@ -702,7 +705,7 @@
                 const time = Date.now();
                 const url = `http://127.0.0.1:1001/client/${encodeURIComponent(rpc.id)}?seq=${seq}`;
                 const ext = base.getExtension(filename);
-                // quirk 1: IDM's header parser is rigid — without the trailing newline it
+                // quirk 1: IDM's header parser is rigid - without the trailing newline it
                 // refuses to parse the block at all.
                 const headersText = Object.entries(headers).map(([k, v]) => `${k}: ${v}`).join('\n') + '\n';
                 // quirk 2: the length prefix is a BYTE count, so multi-byte filenames need
@@ -722,12 +725,12 @@
                 ];
                 // quirk 3: the envelope is undocumented. Read left to right:
                 const data = `MSG#${seq}#13#1#10241:${seq + 1000}:0:${time}:0:1:2:${filesize || 0}:0,${fields.join(',')};`;
-                // bypass base.post — it rejects on res.status >= 400 and parses as
+                // bypass base.post - it rejects on res.status >= 400 and parses as
                 const raw = await new Promise((resolve) => {
                     GM_xmlhttpRequest({
                         method: "POST", url, data,
                         headers: { "Content-Type": "text/plain" },
-                        // withCredentials is required — LinkSwift's
+                        // withCredentials is required - LinkSwift's
                         withCredentials: true,
                         timeout: 15000,
                         onload: (r) => resolve(r.responseText || r.response || ''),
@@ -793,22 +796,13 @@
             .pl-item:hover { background: #f5f6f7; }
             .pl-item-name { flex: 0 0 150px; text-align: left; margin-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: default; }
             .pl-item-link { flex: 1; overflow: hidden; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-            /* Api rows only. The name is pinned to 118px, a quarter of the 470px the pair gets
-               in the 800px popup, so name and link split about 1:3. flex-shrink must stay 0:
-               with shrink 1 the link, which grows, crushed the name to about 20px, and that
-               read as no change at all. A clipped name stays recoverable, since the
-               .listener-tip tooltip on the same element shows it in full on hover. Not applied
-               to aria/curl/bc, where the link holds the command itself. Keyed on .pl-row-api,
-               which only api rows carry. */
+            /* api rows: name pinned at 118px, link takes the rest. hover shows full name. */
             .pl-row-api .pl-item-name { flex: 0 0 118px; margin-right: 0; min-width: 0; font-weight: 500; color: #111; }
             .pl-row-api .pl-item-link { flex: 1 1 auto; min-width: 60px; overflow: hidden; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #787774; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
             .pl-item-btn { flex: 0 0 auto; }
             .pl-a { color: ${color}; text-decoration: none; }
             .pl-a:hover { text-decoration: underline; opacity: 0.8; }
-            /* one filled action, two outlined. three identical solid buttons gave the user no
-               way to tell which was the real one. every api button carries .pl-btn-primary, so
-               the split is by handler: listener-idm is the action, the two copy buttons are
-               secondary. */
+            /* IDM filled, copy buttons outlined. */
             button.pl-item-btn { background: ${color} !important; padding: 4px 8px !important; border-radius: 6px !important; line-height: 1 !important; cursor: pointer !important; color: #fff !important; border: 0 !important; height: 32px !important; box-sizing: border-box !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap !important; transition: opacity 180ms ease !important; }
             button.pl-item-btn.pl-btn-primary.listener-link-copy,
             button.pl-item-btn.pl-btn-primary.listener-link-api-btn { background: #fff !important; color: #111 !important; border: 1px solid #e6e8eb !important; }
@@ -1036,11 +1030,6 @@
                     item, link, tip, target,
                 };
             }
-            function _reset(i) {
-                ins[i] && clearInterval(ins[i]);
-                request[i] && request[i].abort();
-                progress[i] = 0;
-            }
             doc.on('mouseenter mouseleave click', '.pl-button.g-dropdown-button', (e) => {
                 if (e.type === 'mouseleave') {
                     $(e.currentTarget).removeClass('button-open');
@@ -1067,7 +1056,16 @@
                         });
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                base.iframeDownload(e.currentTarget.dataset.link);
+                const link = e.currentTarget.dataset.link;
+                // baidu only: over 50MB a browser request gets nothing, so check the size.
+                if (/d\.pcs\.baidu\.com/.test(link)) {
+                    const size = +e.currentTarget.dataset.filesize || 0;
+                    if (size > 50 * 1024 * 1024) {
+                        message.warning('该文件超过 50MB，浏览器无法直接下载。\n请用 IDM / Aria2 / cURL 下载。');
+                        return;
+                    }
+                }
+                base.iframeDownload(link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);
@@ -1150,7 +1148,7 @@
                 }, 1000);
             });
             // HEAD/ranged-GET can extract the token without a tab when the
-            // user has already authorised the app — Baidu 302s straight to login_success.
+            // user has already authorised the app - Baidu 302s straight to login_success.
             try {
                 if (base.getFinalUrl) {
                     let res = await base.getFinalUrl(pan.pcs[3]);
@@ -1250,7 +1248,7 @@
             if (res.errno === 0) {
                 let files = (res.list || []).filter(v => +v.isdir !== 1);
                 if (!files.length) {
-                    // only retry with a fresh token when the selection actually had files —
+                    // only retry with a fresh token when the selection actually had files -
                     // an all-folder selection returns an empty list too, and deleting the
                     // token here would force a pointless OAuth popup on the next click.
                     if (fidList !== encodeURIComponent('[]') && maxRequestTime >= 1) {
@@ -1388,7 +1386,7 @@
             try {
                 let res = await base.post(url, rpcData, {"User-Agent": pan.ua}, '');
                 if (res.result) return 'success';
-                // aria2 answered but refused — surface its own message so the user
+                // aria2 answered but refused - surface its own message so the user
                 // can tell a bad token from a bad dir instead of a generic "失败".
                 message.error('aria2 拒绝请求：' + ((res.error && res.error.message) || '未知错误（请检查 RPC 密钥与保存路径）'));
                 return 'fail';
@@ -1458,7 +1456,7 @@
                 }
                 if (/openapi.baidu.com\/oauth\/2.0\/login_success/.test(location.href)) {
                     if (location.href.includes('access_token')) {
-                        let token = location.href.match(/access_token=([^&#]+)/)[1];
+                        let token = location.href.match(/access_token=([^&#]+)/)?.[1];
                         base.setValue('baidu_access_token', token);
                         this.getCurrentUK().then((uk) => {
                             if (uk) base.setValue('baidu_access_token_uk', uk);
@@ -1474,7 +1472,7 @@
         convertLinkToAria(link, filename, ua) {
                     filename = base.fixFilename(filename);
                     // ali's CDN 403s without a browser User-Agent, so aria2 needs the header
-                    // too — otherwise the generated command fails where the in-script download now works.
+                    // too - otherwise the generated command fails where the in-script download now works.
                     return encodeURIComponent(`aria2c "${link}" --out "${filename}" -x 16 -s 16 -k 1M --header "Referer: https://www.aliyundrive.com/" --header "User-Agent: ${ua || navigator.userAgent}"`);
                 },
         convertLinkToBC(link, filename, ua) {
@@ -1497,8 +1495,6 @@
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // Swal.close() there can no longer strand the spinner and lock the page.
-                            // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
@@ -1714,7 +1710,7 @@
                 return 'fail';
             }
             let url = `${rpc.domain}:${rpc.port}${rpc.path}`;
-                        // ali's CDN 403s any request without a browser User-Agent — it reads as bot
+                        // ali's CDN 403s any request without a browser User-Agent - it reads as bot
                         const UA = navigator.userAgent;
                         let rpcData = {
                             id: new Date().getTime(),
@@ -1762,7 +1758,7 @@
                 // grid view (the only view alipan ships now) has no selectedKeys
                 let gridDom = document.querySelector(pan.dom.grid);
                 if (!gridDom) return [];
-                // traverseUp must stay 0 here. CDP-verified on alipan 6.8.12 —
+                // traverseUp must stay 0 here. CDP-verified on alipan 6.8.12 -
                 let gridReact = base.findReact(gridDom, 0);
                 if (!gridReact) return [];
                 let dataSource = (gridReact.pendingProps || {}).dataSource || [];
@@ -1843,8 +1839,6 @@
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // Swal.close() there can no longer strand the spinner and lock the page.
-                            // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
@@ -2154,8 +2148,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // Swal.close() there can no longer strand the spinner and lock the page.
-                            // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });
@@ -2573,7 +2565,7 @@ base.iframeDownload(e.currentTarget.dataset.link);
             return encodeURIComponent(`aria2c "${link}" --out "${filename}" -x 16 -s 16 -k 1M --header "Cookie: ${base.getCookie('__pus') || base.getCookie('__puus') || ''}"`);
         },
         convertLinkToBC(link, filename, ua) {
-            // same as convertLinkToCurl — scope the cookie to what quark's CDN needs
+            // same as convertLinkToCurl - scope the cookie to what quark's CDN needs
             // instead of dumping the entire jar into a shareable link.
             const ck = base.getCookie('__pus') || base.getCookie('__puus') || '';
             let bc = `AA/${encodeURIComponent(filename)}/?url=${encodeURIComponent(link)}&cookie=${encodeURIComponent(ck)}ZZ`;
@@ -2606,8 +2598,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                                 Swal.close();
                                 message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                             } finally {
-                                // Swal.close() there can no longer strand the spinner and lock the page.
-                                // No-op when the download dialog already replaced it.
                                 if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                             }
                         });
@@ -2870,8 +2860,6 @@ base.iframeDownload(e.currentTarget.dataset.link);
                             Swal.close();
                             message.error('获取下载链接失败：' + (err && err.message || '未知错误'));
                         } finally {
-                            // Swal.close() there can no longer strand the spinner and lock the page.
-                            // No-op when the download dialog already replaced it.
                             if (document.querySelector('.swal2-popup.swal2-loading')) Swal.close();
                         }
                     });

@@ -647,7 +647,7 @@
             $div.append($iframe);
             $('body').append($div);
         },
-        // all five adapters download an api link the same way — hand the URL to the
+        // all six adapters download an api link the same way — hand the URL to the
         iframeDownload(link) {
             if (!/^https?:\/\//i.test(link)) {
                 message.error('提示：下载链接无效！');
@@ -1064,7 +1064,17 @@
                         });
             doc.on('click', '.listener-link-api', (e) => {
                 e.preventDefault();
-                base.iframeDownload(e.currentTarget.dataset.link);
+                const link = e.currentTarget.dataset.link;
+                // Baidu PCS only serves files above ~20MB to a request carrying
+                // User-Agent: pan.baidu.com, and a browser navigation cannot set a UA, so a
+                // big file would otherwise fail silently on click. The size is already on
+                // the row, so check it here instead of spending a request to find out.
+                const size = +e.currentTarget.dataset.filesize || 0;
+                if (/d\.pcs\.baidu\.com/.test(link) && size > 20 * 1024 * 1024) {
+                    message.warning('该文件超过 20MB，百度要求特定 User-Agent 才放行，浏览器无法携带。\n请用 IDM / Aria2 / cURL 下载。');
+                    return;
+                }
+                base.iframeDownload(link);
             });
             doc.on('click', '.listener-back', async (e) => {
                 let o = _factory(e);
@@ -1295,7 +1305,7 @@
                 if (mode === 'api') {
                     content += `<div class="pl-item">
                                 <div class="pl-item-name listener-tip" data-size="${size}">${filename}</div>
-                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
+                                <a class="pl-item-link pl-a listener-link-api" href="${base.esc(dlink)}" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}">${base.esc(dlink)}</a>
                                 <button class="pl-item-btn pl-btn-primary listener-idm" data-filename="${base.esc(filename)}" data-filesize="${v.size}" data-link="${base.esc(dlink)}" data-index="${i}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>IDM下载</button>
 
                                 <button class="pl-item-btn pl-btn-primary listener-link-copy" data-filename="${base.esc(filename)}" data-link="${base.esc(dlink)}"><svg class="pl-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制链接</button>

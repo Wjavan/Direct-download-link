@@ -148,6 +148,8 @@ def on_post_llm_call(**kwargs):
     if not _enabled():
         _log("post_llm_call: plugin disabled, skip")
         return
+    if kwargs.get("platform") == "weixin":
+        return
 
     try:
         user_message = kwargs.get("user_message", "") or ""
@@ -169,6 +171,8 @@ def on_session_end(**kwargs):
     """模型异常停止（打断/失败/未完成）时通知；正常完成由 post_llm_call 推送回复。
     过滤 ws 断连重连等空回合：只有产生过回复的 turn 才值得通知。"""
     if not _enabled():
+        return
+    if kwargs.get("platform") == "weixin":
         return
     if kwargs.get("completed"):
         return

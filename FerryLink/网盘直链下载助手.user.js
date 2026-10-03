@@ -65,11 +65,12 @@
         return;
     }
     // biggest baidu file a browser navigation can pull unaided, in bytes. baidu never
-    // published the cut-off and it drifts, so this is deliberately set at the top of the
-    // reported range: 32MB was observed downloading, a bypy report puts the wall at 50M,
-    // and the alist/opendoc docs only guess "about 20M". Erring high means a file that
-    // would have worked is not refused. Lower it if large files start failing silently.
-    const DIRECT_MAX = 50 * 1024 * 1024;
+    // published the cut-off and it drifts, so this is a deliberate guess set well above the
+    // reported range (the alist/opendoc docs say "about 20M", a bypy report says 50M, and a
+    // 32MB file was observed downloading). Erring high means a file that would have worked
+    // is not refused; one that turns out to be too big just fails the same quiet way it did
+    // before this check existed.
+    const DIRECT_MAX = 200 * 1024 * 1024;
     let pt = '', selectList = [], params = {}, mode = '', width = 800, pan = {}, color = '',
         doc = $(document), progress = {}, request = {}, ins = {};
 

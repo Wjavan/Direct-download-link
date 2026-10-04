@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T12:50:00+08:00",
+  "title": "Design System: FerryLink",
+  "extensions": {
+    "colorMeta": {
+      "brand-default": { "role": "primary", "displayName": "品牌默认蓝", "canonical": "#09AAFF", "tonalRamp": ["#003d5c", "#006699", "#0088cc", "#09aaff", "#33bbff", "#66ccff", "#99ddff", "#cceeff"] },
+      "brand-baidu": { "role": "primary", "displayName": "百度蓝", "canonical": "#09AAFF", "tonalRamp": ["#003d5c", "#006699", "#0088cc", "#09aaff", "#33bbff", "#66ccff", "#99ddff", "#cceeff"] },
+      "brand-ali": { "role": "primary", "displayName": "阿里紫蓝", "canonical": "#637dff", "tonalRamp": ["#252847", "#3a3f6b", "#4f56a0", "#637dff", "#82a0ff", "#a1b3ff", "#c0c7ff", "#dde0ff"] },
+      "brand-tianyi": { "role": "primary", "displayName": "天翼蓝", "canonical": "#2b89ea", "tonalRamp": ["#0d3345", "#15527a", "#1f72b3", "#2b89ea", "#52a3ef", "#7fbcf3", "#abd4f7", "#d4ecfb"] },
+      "brand-xunlei": { "role": "primary", "displayName": "迅雷蓝", "canonical": "#3f85ff", "tonalRamp": ["#17335c", "#21508a", "#3366b3", "#3f85ff", "#6aa0ff", "#95bcff", "#c0d7ff", "#dbe8ff"] },
+      "brand-yidong": { "role": "primary", "displayName": "移动蓝", "canonical": "#3181f9", "tonalRamp": ["#0f3345", "#1a527a", "#2566b3", "#3181f9", "#5f9ffb", "#8dbcfd", "#bbd7fe", "#dbe8ff"] },
+      "text-primary": { "role": "neutral", "displayName": "墨黑", "canonical": "#111", "tonalRamp": ["#111", "#2b2b2b", "#454545", "#5f5f5f", "#797979", "#939393", "#adadad", "#c7c7c7"] },
+      "state-success": { "role": "primary", "displayName": "成功绿", "canonical": "#55af28", "tonalRamp": ["#1f3d0e", "#2d5c14", "#3c7a1d", "#55af28", "#74c050", "#93d078", "#b1e0a0", "#d4f0c4"] },
+      "state-danger": { "role": "primary", "displayName": "危险红", "canonical": "#cc3235", "tonalRamp": ["#3d0d0e", "#5c1416", "#8a1f22", "#cc3235", "#d65b5d", "#e08485", "#eaadac", "#f4d6d5"] },
+      "state-warning": { "role": "primary", "displayName": "警告琥珀", "canonical": "#da9328", "tonalRamp": ["#3d2a0e", "#5c3f14", "#8a5c1d", "#da9328", "#e0b85f", "#e7c890", "#eed7c0", "#f4e8d5"] }
+    },
+    "typographyMeta": {
+      "body": { "displayName": "Body", "purpose": "所有按钮、链接、表格文本" },
+      "label": { "displayName": "Label", "purpose": "次级标签、文件大小、辅助信息" },
+      "mono": { "displayName": "Mono", "purpose": "SweetAlert2 继承，命令文本" }
+    },
+    "shadows": [
+      { "name": "dialog-ambient", "value": "0 1px 2px rgb(28 28 32 / 4%), 0 6px 16px rgb(28 28 32 / 8%)", "purpose": "SweetAlert2 弹窗容器，双层极淡投影，唯一的阴影" }
+    ],
+    "motion": [
+      { "name": "ease-opacity", "value": "easeOpacity 1.2s 2", "purpose": "success 按钮淡入动画" },
+      { "name": "animate-slow", "value": "opacity 0.5, slow", "purpose": "按钮状态变化后的渐隐" }
+    ],
+    "breakpoints": [
+      { "name": "dialog", "value": "800px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "品牌入口按钮（百度/阿里/天翼/迅雷/移动）",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "网盘页面的入口按钮，实心品牌色，白字，hover 加深。",
+      "html": "<button class=\"ds-brand-btn\">API 下载</button>",
+      "css": ".ds-brand-btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border: 0 solid transparent; border-radius: 6px; background: #09AAFF; color: #fff; font-size: 14px; cursor: pointer; transition: background 0.2s; } .ds-brand-btn:hover { background: #0073e3; } .ds-brand-btn:active { filter: brightness(0.9); }"
+    },
+    {
+      "name": "夸克入口按钮（描边）",
+      "kind": "button",
+      "description": "夸克品牌色白底描边按钮，区别于其他五家实心。",
+      "html": "<button class=\"ds-quark-btn\">API 下载</button>",
+      "css": ".ds-quark-btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #3181f9; font-size: 14px; cursor: pointer; transition: background 0.2s; } .ds-quark-btn:hover { background: #f6f6f6; }"
+    },
+    {
+      "name": "内部主按钮（pl-btn-primary）",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "弹窗内主操作（IDM 下载、确认）。",
+      "html": "<button class=\"ds-btn-primary\">IDM下载</button>",
+      "css": ".ds-btn-primary { background: #09AAFF; border: 0; border-radius: 6px; color: #fff; cursor: pointer; font-size: 14px; padding: 4px 12px; transition: background 0.2s, filter 0.2s; } .ds-btn-primary:hover { background: #0073e3; } .ds-btn-primary:active { filter: brightness(0.9); }"
+    },
+    {
+      "name": "内部描边按钮（复制类）",
+      "kind": "button",
+      "description": "弹窗内次操作（复制链接、复制文件名），描边样式退为次要。",
+      "html": "<button class=\"ds-btn-outline\">复制链接</button>",
+      "css": ".ds-btn-outline { background: transparent; border: 1px solid #09AAFF; border-radius: 6px; color: #09AAFF; cursor: pointer; font-size: 14px; padding: 4px 12px; transition: background 0.2s; } .ds-btn-outline:hover { background: rgba(9,170,255,0.08); } .ds-btn-outline:active { filter: brightness(0.9); }"
+    },
+    {
+      "name": "状态按钮（成功）",
+      "kind": "button",
+      "refersTo": "button-success",
+      "description": "推送/复制成功态，绿底白字，淡入动画。",
+      "html": "<button class=\"ds-btn-success\">已推送至 IDM</button>",
+      "css": ".ds-btn-success { background: #55af28; border: 0; border-radius: 6px; color: #fff; font-size: 14px; padding: 4px 12px; animation: easeOpacity 1.2s 2; animation-fill-mode: forwards; } @keyframes easeOpacity { 0% { opacity: 0.5; } 100% { opacity: 0.5; } }"
+    },
+    {
+      "name": "状态按钮（失败）",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "推送失败态，红底白字。",
+      "html": "<button class=\"ds-btn-danger\">推送失败</button>",
+      "css": ".ds-btn-danger { background: #cc3235; border: 0; border-radius: 6px; color: #fff; font-size: 14px; padding: 4px 12px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "中性工具覆盖层",
+    "overview": "FerryLink 是注入式 UI 覆盖层，不是独立应用。它的视觉系统有两个面孔：对外，每个网盘的入口按钮贴近该网盘官网品牌色；对内，API 下载弹窗、设置弹窗和所有操作按钮用一套自洽的内部系统（pl-* 类名），与网盘页面隔离。整体气质是中性工具——不抢戏，不装饰，密度紧凑，按钮和链接一眼能分清主次。字体走系统栈，圆角 4-8px，阴影极淡（4-8% 不透明度），不引外部资源。",
+    "keyCharacteristics": ["双层身份：外层贴品牌，内层自洽隔离", "系统字体栈，无外部字体依赖", "极淡阴影（rgb(28 28 32 / 4-8%)），近扁平", "4-8px 圆角，紧凑间距", "状态色语义化：success 绿、danger 红、warning 琥珀、info 灰"],
+    "rules": [
+      { "name": "The 品牌隔离 Rule", "body": "六网盘品牌色只出现在各自的入口按钮上，不渗透进内部弹窗。弹窗内一律用 brand-default (#09AAFF) 和状态色。", "section": "colors" },
+      { "name": "The 近扁平 Rule", "body": "按钮和链接无阴影，深度只通过颜色和边框传达。夸克按钮用 1px 描边代替实心背景，是唯一的描边入口按钮。", "section": "elevation" }
+    ],
+    "dos": ["Do 保持入口按钮贴近各网盘官网品牌色", "Do 弹窗内统一用 brand-default (#09AAFF) 和状态色，不混入网盘品牌色", "Do 用 .listener-tip 悬停显示被截断的完整文件名", "Do 保持设置弹窗 target: document.body + z-index 2147483647 穿透微前端"],
+    "donts": ["Don't 引入外部 CDN 字体、图标库或新依赖", "Don't 用 Shadow DOM（破坏 document 级事件委托）", "Don't 在普通 API 链接上主动调用 IDM（IDM 有独立按钮）", "Don't 改变网盘原页面结构或做去广告"]
+  }
+}

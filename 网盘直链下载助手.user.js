@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              FerryLink
 // @namespace         https://github.com/Wjavan/FerryLink
-// @version           1.2.1
+// @version           1.2.2
 // @author            Wjavan
 // @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持 HTTP/JSON-RPC/cURL，推送至 IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。
 // @description:en    Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.A fork of youxiaohou's Pan Download Helper.
@@ -112,6 +112,10 @@
             return toast.fire({title: text, icon: 'question'});
         }
     };
+    // still-live credentials that pre-fix versions used to mirror into
+    // page-accessible localStorage; getStorage/migrate pull these into the
+    // sandboxed GM store on first encounter and stop exposing them.
+    const LEGACY_LOCAL_KEYS = ['baiduyunPlugin_BDUSS', 'accessToken'];
     let base = {
         getCookie(name) {
             let cname = name + "=";
@@ -137,10 +141,22 @@
         // alipan keeps rotating its own localStorage token (new access_token +
         getStorage(key) {
             let v = null;
-            try {
-                v = localStorage.getItem(key);
-            } catch (e) { /* storage unavailable */ }
+            if (key === 'token') {
+                try { v = localStorage.getItem(key); } catch (e) { /* storage unavailable */ }
+            }
             if (v === null || v === undefined) v = GM_getValue(key, null);
+            if ((v === null || v === undefined) && LEGACY_LOCAL_KEYS.includes(key)) {
+                // one-time migration: a pre-fix install may have left this
+                // credential sitting only in localStorage. Pull it into GM
+                // storage and scrub it from the page-accessible copy.
+                let legacy = null;
+                try { legacy = localStorage.getItem(key); } catch (e) { /* storage unavailable */ }
+                if (legacy !== null && legacy !== undefined) {
+                    GM_setValue(key, legacy);
+                    v = legacy;
+                }
+                try { localStorage.removeItem(key); } catch (e) { /* storage unavailable */ }
+            }
             try {
                 return JSON.parse(v);
             } catch (e) {
@@ -189,13 +205,17 @@
         // throws (wrapped), and a failure just means we retry next load rather than blocking
         migrate() {
             const MARK = 'ferrylink_migrated_version';
-            const VERSION = '1.2.0';
+            const VERSION = '1.2.1';
             try {
                 if (GM_getValue(MARK, '') === VERSION) return;
                 // orphaned by removing share-page support
                 ['shareToken', 'share_token'].forEach((k) => {
                     try { GM_deleteValue(k); localStorage.removeItem(k); } catch (e) {}
                 });
+                // still-live credentials: reading them runs getStorage's own
+                // migration, pulling any legacy localStorage copy into GM
+                // storage and clearing it from localStorage right away.
+                LEGACY_LOCAL_KEYS.forEach((k) => { try { base.getStorage(k); } catch (e) {} });
                 GM_setValue(MARK, VERSION);
             } catch (e) { /* never block startup */ }
         },

@@ -138,7 +138,7 @@
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Wjavan/FerryLink&type=Date)](https://star-history.com/#Wjavan/FerryLink&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Wjavan/FerryLink&type=Date&theme=dark)](https://star-history.com/#Wjavan/FerryLink&Date)
 
 ---
 

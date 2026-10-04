@@ -1,0 +1,17 @@
+name: Version Consistency Check
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Check @version vs const VERSION"
+        run: |
+          v1=$(grep -oP '(?<=@version\s+)\S+' "网盘直链下载助手.user.js")
+          v2=$(grep -oP "(?<=const VERSION = ')[^']+" "网盘直链下载助手.user.js")
+          echo "@version=$v1  const VERSION=$v2"
+          [ "$v1" = "$v2" ] || { echo "::error::@version ($v1) 与 const VERSION ($v2) 不一致"; exit 1; }

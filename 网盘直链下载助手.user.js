@@ -141,7 +141,10 @@
         // alipan keeps rotating its own localStorage token (new access_token +
         getStorage(key) {
             let v = null;
-            if (key === 'token') {
+            // token and page-native keys (deviceid, credentials_*, captcha_*):
+            // keep reading localStorage as before. LEGACY_LOCAL_KEYS skip this
+            // and go through the GM-first migration path below.
+            if (key === 'token' || !LEGACY_LOCAL_KEYS.includes(key)) {
                 try { v = localStorage.getItem(key); } catch (e) { /* storage unavailable */ }
             }
             if (v === null || v === undefined) v = GM_getValue(key, null);
@@ -205,17 +208,21 @@
         // throws (wrapped), and a failure just means we retry next load rather than blocking
         migrate() {
             const MARK = 'ferrylink_migrated_version';
-            const VERSION = '1.2.1';
+            const VERSION = '1.2.2';
             try {
                 if (GM_getValue(MARK, '') === VERSION) return;
                 // orphaned by removing share-page support
                 ['shareToken', 'share_token'].forEach((k) => {
                     try { GM_deleteValue(k); localStorage.removeItem(k); } catch (e) {}
                 });
-                // still-live credentials: reading them runs getStorage's own
-                // migration, pulling any legacy localStorage copy into GM
-                // storage and clearing it from localStorage right away.
-                LEGACY_LOCAL_KEYS.forEach((k) => { try { base.getStorage(k); } catch (e) {} });
+                // Migrate first: if GM is empty, getStorage pulls the localStorage
+                // copy into GM. Then unconditionally scrub the page-accessible copy,
+                // even when GM already had a value (otherwise the old localStorage
+                // entry survives and the CWE-282 fix is incomplete).
+                LEGACY_LOCAL_KEYS.forEach((k) => {
+                    try { base.getStorage(k); } catch (e) {}
+                    try { localStorage.removeItem(k); } catch (e) {}
+                });
                 GM_setValue(MARK, VERSION);
             } catch (e) { /* never block startup */ }
         },

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              FerryLink
 // @namespace         https://github.com/Wjavan/FerryLink
-// @version           1.2.1
+// @version           1.2.2
 // @author            Wjavan
 // @description       支持百度/阿里/天翼/迅雷/夸克/移动六大网盘直链下载。支持 HTTP/JSON-RPC/cURL，推送至 IDM/XDown/Aria2/NDM/Motrix/终端。基于油小猴(youxiaohou.com)的网盘直链下载助手修改。
 // @description:en    Supports Baidu/Ali/Tianyi/Xunlei/Quark/China-Mobile cloud drives. Protocols: HTTP/JSON-RPC/cURL. All configs are embedded locally.A fork of youxiaohou's Pan Download Helper.
@@ -112,6 +112,10 @@
             return toast.fire({title: text, icon: 'question'});
         }
     };
+    // still-live credentials that pre-fix versions used to mirror into
+    // page-accessible localStorage; getStorage/migrate pull these into the
+    // sandboxed GM store on first encounter and stop exposing them.
+    const LEGACY_LOCAL_KEYS = ['baiduyunPlugin_BDUSS', 'accessToken'];
     let base = {
         getCookie(name) {
             let cname = name + "=";
@@ -137,10 +141,25 @@
         // alipan keeps rotating its own localStorage token (new access_token +
         getStorage(key) {
             let v = null;
-            try {
-                v = localStorage.getItem(key);
-            } catch (e) { /* storage unavailable */ }
+            // token and page-native keys (deviceid, credentials_*, captcha_*):
+            // keep reading localStorage as before. LEGACY_LOCAL_KEYS skip this
+            // and go through the GM-first migration path below.
+            if (key === 'token' || !LEGACY_LOCAL_KEYS.includes(key)) {
+                try { v = localStorage.getItem(key); } catch (e) { /* storage unavailable */ }
+            }
             if (v === null || v === undefined) v = GM_getValue(key, null);
+            if ((v === null || v === undefined) && LEGACY_LOCAL_KEYS.includes(key)) {
+                // one-time migration: a pre-fix install may have left this
+                // credential sitting only in localStorage. Pull it into GM
+                // storage and scrub it from the page-accessible copy.
+                let legacy = null;
+                try { legacy = localStorage.getItem(key); } catch (e) { /* storage unavailable */ }
+                if (legacy !== null && legacy !== undefined) {
+                    GM_setValue(key, legacy);
+                    v = legacy;
+                }
+                try { localStorage.removeItem(key); } catch (e) { /* storage unavailable */ }
+            }
             try {
                 return JSON.parse(v);
             } catch (e) {
@@ -173,23 +192,36 @@
             }
         },
         setStorage(key, value) {
-            // alipan reads its own token straight out of localStorage, so a refreshed
+            // alipan's own page scripts read the ali token straight out of localStorage,
+            // so only that key is mirrored there. Every other credential (access tokens,
+            // BDUSS, captcha, device id, etc.) is kept solely in the sandboxed GM storage,
+            // which page-level XSS cannot read, instead of being exposed via localStorage.
             let payload = value;
             if (this.isType(value) === 'object' || this.isType(value) === 'array') {
                 payload = JSON.stringify(value);
             }
-            try { localStorage.setItem(key, payload); } catch (e) { /* storage unavailable */ }
+            if (key === 'token') {
+                try { localStorage.setItem(key, payload); } catch (e) { /* storage unavailable */ }
+            }
             return GM_setValue(key, payload);
         },
         // throws (wrapped), and a failure just means we retry next load rather than blocking
         migrate() {
             const MARK = 'ferrylink_migrated_version';
-            const VERSION = '1.2.1';
+            const VERSION = '1.2.2';
             try {
                 if (GM_getValue(MARK, '') === VERSION) return;
                 // orphaned by removing share-page support
                 ['shareToken', 'share_token'].forEach((k) => {
                     try { GM_deleteValue(k); localStorage.removeItem(k); } catch (e) {}
+                });
+                // Migrate first: if GM is empty, getStorage pulls the localStorage
+                // copy into GM. Then unconditionally scrub the page-accessible copy,
+                // even when GM already had a value (otherwise the old localStorage
+                // entry survives and the CWE-282 fix is incomplete).
+                LEGACY_LOCAL_KEYS.forEach((k) => {
+                    try { base.getStorage(k); } catch (e) {}
+                    try { localStorage.removeItem(k); } catch (e) {}
                 });
                 GM_setValue(MARK, VERSION);
             } catch (e) { /* never block startup */ }

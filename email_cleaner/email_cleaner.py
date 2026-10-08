@@ -116,10 +116,10 @@ def clean_account(account, dry_run=True, days_back=30):
     password = account['password']
     whitelist = [d.lower() for d in account.get('whitelist_domains', [])]
 
-    mode = 'DRY RUN (list only)' if dry_run else 'EXECUTE (deleting)'
+    mode = '预览（仅列出，不删除）' if dry_run else '执行（删除中）'
     print(f"\n{'='*60}")
     print(f"  {name} ({email_addr})")
-    print(f"  Mode: {mode} | Scanning last {days_back} days")
+    print(f"  模式：{mode} | 扫描最近 {days_back} 天")
     print(f"{'='*60}")
 
     try:
@@ -132,12 +132,12 @@ def clean_account(account, dry_run=True, days_back=30):
         since_date = (datetime.now() - timedelta(days=days_back)).strftime('%d-%b-%Y')
         status, data = mail.uid('search', None, f'SINCE {since_date}')
         if status != 'OK':
-            print(f"  Search failed: {status}")
+            print(f"  搜索失败：{status}")
             mail.logout()
             return 0
 
         uids = data[0].split() if data[0] else []
-        print(f"  Inbox emails since {since_date}: {len(uids)}")
+        print(f"  收件箱自 {since_date} 起的邮件数：{len(uids)}")
 
         marketing_found = []
         checked = 0
@@ -163,37 +163,37 @@ def clean_account(account, dry_run=True, days_back=30):
             marketing_found.append((uid, msg, reasons))
             checked += 1
 
-        print(f"  Checked: {checked} | Marketing found: {len(marketing_found)}")
+        print(f"  已检查：{checked} | 发现营销邮件：{len(marketing_found)}")
 
         if marketing_found:
-            print(f"\n  --- Marketing emails ---")
+            print(f"\n  --- 营销邮件清单 ---")
             for uid, msg, reasons in marketing_found:
                 frm = decode_mime_header(msg.get('From', ''))[:60]
                 subj = decode_mime_header(msg.get('Subject', ''))[:60]
                 print(f"    UID {uid.decode()}")
-                print(f"      From: {frm}")
-                print(f"      Subject: {subj}")
-                print(f"      Reasons: {', '.join(reasons)}")
+                print(f"      发件人：{frm}")
+                print(f"      主题：{subj}")
+                print(f"      判定依据：{', '.join(reasons)}")
 
         if not dry_run and marketing_found:
-            print(f"\n  Deleting {len(marketing_found)} emails...")
+            print(f"\n  正在删除 {len(marketing_found)} 封邮件...")
             deleted = 0
             for uid, _, _ in marketing_found:
                 status, _ = mail.uid('store', uid, '+FLAGS', '\\Deleted')
                 if status == 'OK':
                     deleted += 1
             mail.expunge()
-            print(f"  Deleted: {deleted}/{len(marketing_found)}")
+            print(f"  已删除：{deleted}/{len(marketing_found)}")
         elif dry_run and marketing_found:
-            print(f"\n  >>> [DRY RUN] {len(marketing_found)} would be deleted. Use --execute to delete. <<<")
+            print(f"\n  >>> [预览] 将删除 {len(marketing_found)} 封邮件。使用 --execute 参数才会真正删除。 <<<")
 
         mail.logout()
         return len(marketing_found)
 
     except imaplib.IMAP4.error as e:
-        print(f"  IMAP Error: {e}")
+        print(f"  IMAP 错误：{e}")
     except Exception as e:
-        print(f"  Error: {e}")
+        print(f"  错误：{e}")
     return 0
 
 
@@ -209,8 +209,8 @@ def main():
             days_back = int(sys.argv[i + 1])
 
     if not os.path.exists(config_path):
-        print(f"Config file not found: {config_path}")
-        print("Create email_cleaner_config.json first. See template.")
+        print(f"找不到配置文件：{config_path}")
+        print("请先创建 email_cleaner_config.json。")
         sys.exit(1)
 
     with open(config_path, 'r', encoding='utf-8') as f:
@@ -219,13 +219,13 @@ def main():
     total = 0
     for account in config['accounts']:
         if not account.get('enabled', True):
-            print(f"\n  Skipping {account.get('name', account['email'])} (disabled)")
+            print(f"\n  跳过 {account.get('name', account['email'])}（未启用）")
             continue
         total += clean_account(account, dry_run=dry_run, days_back=days_back) or 0
 
-    action = 'found' if dry_run else 'deleted'
+    action = '发现' if dry_run else '已删除'
     print(f"\n{'='*60}")
-    print(f"  Done. Total marketing emails {action}: {total}")
+    print(f"  完成。共{action}营销邮件 {total} 封")
     print(f"{'='*60}")
 
 

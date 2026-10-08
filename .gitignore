@@ -1,2 +1,17 @@
 # git worktree checkouts — real worktrees must not be tracked
 .worktrees/
+
+# 个人归档/生成文件，不进仓库
+clash-verge/
+potplayer/
+netdisk-userscripts/
+hermes-agent/
+llama/
+session-archives/
+email_cleaner/
+pushplus_notify/
+stock market/
+备考/
+MOVED_FILES.md
+nul
+__pycache__/

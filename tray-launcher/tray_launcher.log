@@ -1,0 +1,5 @@
+2026-10-09 21:14:12,982 WARNING 已有实例运行（LOCK_PORT=45680），本次退出
+2026-10-09 21:15:08,309 INFO 用户取消配置，退出
+2026-10-09 21:29:27,301 INFO 已启动 PING.EXE (PID=11956)，输出见 C:\Users\JAVA\Documents\Hermes\tray-launcher\PING.log
+2026-10-09 22:01:19,897 INFO 已启动 cmd.exe (PID=21092)，输出见 C:\Users\JAVA\Documents\Hermes\tray-launcher\cmd.log
+2026-10-09 22:01:39,541 INFO 已启动 cmd.exe (PID=25996)，输出见 C:\Users\JAVA\Documents\Hermes\tray-launcher\test_stderr.log

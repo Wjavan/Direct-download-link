@@ -43,3 +43,4 @@ jobs:
           name: FerryLink v${{ steps.ver.outputs.version }}
           body_path: RELEASE_NOTES.md
           generate_release_notes: true
+1

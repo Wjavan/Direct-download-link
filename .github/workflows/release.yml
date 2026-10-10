@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -39,10 +39,11 @@ jobs:
 
       - name: Create release
         if: steps.check.outputs.exists == 'false'
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         env:
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.ver.outputs.version }}
-        with:
-          tag_name: v${{ env.VERSION }}
-          name: FerryLink v${{ env.VERSION }}
-          generate_release_notes: true
+        run: |
+          gh release create "v$VERSION" \
+            --title "FerryLink v$VERSION" \
+            --generate-notes \
+            --verify-tag

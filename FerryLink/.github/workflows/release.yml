@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: ['网盘直链下载助手.user.js']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read @version
+        id: ver
+        run: |
+          version=$(sed -n 's/^\/\/ @version[[:space:]]\+\([0-9][0-9.]*\)/\1/p' 网盘直链下载助手.user.js | head -n1)
+          if [ -z "$version" ]; then
+            echo "::error::@version not found in userscript"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if tag exists
+        id: check
+        run: |
+          if git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.ver.outputs.version }} already exists, skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: FerryLink v${{ steps.ver.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: true

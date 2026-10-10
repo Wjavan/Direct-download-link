@@ -977,9 +977,9 @@
             bc: {0: "BC 下载", 1: ''},
         },
         quark: {
-            pcs: {"0": "https://drive.quark.cn/1/clouddrive/file/download?pr=ucpro&fr=pc"},
+            pcs: {"0": "https://drive-pc.quark.cn/1/clouddrive/file/download?pr=ucpro&fr=pc&sys=win32&ve=6.9.7.761", "1": "https://drive-social-api.quark.cn/1/clouddrive/chat/conv/file/acquire_dl_token?pr=ucpro&fr=pc&sys=win32&ve=6.9.7.761&fr=win&la=zh-CN&ch=pckk%40product_guanwan"},
             btn: {"home": ".btn-operate .btn-main"},
-            ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch",
+            ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 QuarkPC/6.9.7.761 QuarkCloudDrivePC/6.9.7.761 quark-cloud-drive/2.5.40",
             api: {0: "API 下载", 1: ''},
             aria: {0: "Aria 下载", 1: ''},
             rpc: {0: "RPC 下载", 1: ''},
@@ -2675,6 +2675,31 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 });
             }
         },
+        // quark hands out a per-session accel token; without it the CDN serves the
+        // download from a throttled node (~30KB/s). fetching the real link with this
+        // token in the body gets the fast node instead.
+        async getAccelToken() {
+            const now = Date.now();
+            const cached = base.getValue('quark_accel_token');
+            if (cached && cached.token && cached.expired_timestamp) {
+                if (cached.expired_timestamp > now + 60000) {
+                    return cached.token;
+                }
+            }
+            const time = Math.floor(now / 1e3);
+            try {
+                let res = await base.post(pan.pcs[1], {
+                    "conversation_id": "300000" + time,
+                    "conversation_type": 3,
+                    "msg_id": time + "000"
+                }, {"content-type": "application/json;charset=utf-8", "Cookie": String(document.cookie), "User-Agent": pan.ua});
+                if (res && res.code === 0 && res.data && res.data.token) {
+                    base.setValue('quark_accel_token', res.data);
+                    return res.data.token;
+                }
+            } catch (e) {}
+            return '';
+        },
         async getPCSLink() {
                     selectList = this.getSelectedList();
                     if (selectList.length === 0) {
@@ -2688,9 +2713,12 @@ base.iframeDownload(e.currentTarget.dataset.link);
                 fids.push(val.fid);
             });
             if (pt === 'home') {
+                let token = await this.getAccelToken();
                 let res = await base.post(pan.pcs[0], {
-                    "fids": fids
-                }, {"content-type": "application/json;charset=utf-8", "user-agent": pan.ua});
+                    "fids": fids,
+                    "speedup_session": "",
+                    "token": token
+                }, {"content-type": "application/json;charset=utf-8", "Cookie": String(document.cookie), "user-agent": pan.ua});
                 if (res.code === 31001) {
                     Swal.close(); return message.error('提示：请先登录网盘！');
                 }
